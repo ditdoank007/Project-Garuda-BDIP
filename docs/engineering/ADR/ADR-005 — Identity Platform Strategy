@@ -1,0 +1,346 @@
+# ================================================================
+# ADR-005
+# Identity Platform Strategy
+# ================================================================
+
+Project  : BDIP (Basarnas Digital Identity Platform)
+Codename : Project Garuda
+
+Status   : ACCEPTED
+
+Date     : 30 Juni 2026
+
+Author   : Dityo Mahendro & ChatGPT
+
+==================================================================
+
+# Latar Belakang
+
+Pada awal Project Garuda dilakukan evaluasi terhadap
+penggunaan Synology Directory Server sebagai pusat
+identitas pengguna BASARNAS.
+
+Synology Directory Server saat ini telah digunakan sebagai
+sumber autentikasi beberapa layanan, termasuk
+FreeRADIUS untuk Hotspot Mikrotik.
+
+Namun ditemukan beberapa keterbatasan.
+
+==================================================================
+
+# Permasalahan
+
+Walaupun Synology Directory Server mampu melakukan
+autentikasi LDAP dengan baik, namun memiliki keterbatasan
+dalam pengelolaan atribut tambahan yang dibutuhkan
+oleh FreeRADIUS dan Mikrotik.
+
+Contoh atribut yang dibutuhkan:
+
+- Mikrotik-Rate-Limit
+- Mikrotik-Group
+- Session-Timeout
+- Idle-Timeout
+- Simultaneous-Use
+- Framed-IP-Address
+- VLAN Assignment
+- Radius Reply Attribute lainnya.
+
+Pengelolaan atribut tersebut di Synology tidak fleksibel
+dan sulit dikembangkan.
+
+Akibatnya pengaturan bandwidth pengguna,
+profil hotspot,
+VPN,
+dan layanan jaringan lainnya
+menjadi sulit dikelola.
+
+==================================================================
+
+# Keputusan
+
+Diputuskan membangun OpenLDAP sebagai Identity Store utama.
+
+OpenLDAP dipilih karena:
+
+- Mendukung schema LDAP standar.
+- Mendukung penambahan objectClass baru.
+- Mendukung atribut Radius.
+- Mudah diintegrasikan dengan FreeRADIUS.
+- Mudah diintegrasikan dengan Mikrotik.
+- Mudah diintegrasikan dengan Synology.
+- Mudah diintegrasikan dengan Keycloak.
+- Bersifat Open Source.
+- Skalabel.
+
+==================================================================
+
+# Peran BDIP
+
+BDIP bukan LDAP Server.
+
+BDIP merupakan Identity Administration Platform.
+
+Seluruh administrasi dilakukan melalui BDIP.
+
+BDIP bertugas:
+
+- Membuat User
+- Mengubah User
+- Menghapus User
+- Mengelola Group
+- Mengelola Membership
+- Mengelola Password
+- Mengelola Application Assignment
+- Mengelola Radius Attribute
+- Mengelola Policy
+
+BDIP hanya menjadi antarmuka administrasi.
+
+Data sesungguhnya berada di OpenLDAP.
+
+==================================================================
+
+# Arsitektur
+
+                   BDIP
+
+        (Identity Administration)
+
+                       │
+
+                       ▼
+
+                 OpenLDAP
+
+                       │
+
+        ┌──────────────┼───────────────┐
+
+        ▼              ▼               ▼
+
+   Synology       FreeRADIUS       Keycloak
+
+                       │
+
+                       ▼
+
+                  Mikrotik
+
+             Hotspot / OVPN
+
+==================================================================
+
+# Single Source of Identity
+
+Mulai Project Garuda,
+OpenLDAP menjadi sumber identitas utama.
+
+Seluruh aplikasi mengambil data identitas
+dari OpenLDAP.
+
+Bukan dari Synology.
+
+==================================================================
+
+# Peran Synology
+
+Synology tetap digunakan.
+
+Namun hanya sebagai:
+
+- NAS
+- File Server
+- DSM
+- Home Folder
+- LDAP Client
+
+Synology tidak lagi menjadi pusat administrasi identitas.
+
+==================================================================
+
+# Peran Mikrotik
+
+Mikrotik tidak menyimpan user.
+
+Mikrotik melakukan autentikasi ke FreeRADIUS.
+
+FreeRADIUS mengambil informasi user
+beserta atribut Radius
+dari OpenLDAP.
+
+Dengan demikian:
+
+Bandwidth
+
+Queue
+
+VPN
+
+Hotspot
+
+dapat dikendalikan langsung melalui atribut LDAP.
+
+==================================================================
+
+# Future Identity Flow
+
+Administrator
+
+↓
+
+BDIP
+
+↓
+
+OpenLDAP
+
+↓
+
+FreeRADIUS
+
+↓
+
+Mikrotik
+
+↓
+
+Bandwidth otomatis
+
+↓
+
+VPN otomatis
+
+↓
+
+Hotspot otomatis
+
+==================================================================
+
+# Future Application Flow
+
+Administrator membuat user.
+
+↓
+
+Administrator memilih aplikasi.
+
+☑ Synology
+
+☑ Hotspot
+
+☑ OpenVPN
+
+☑ Nextcloud
+
+☑ Docker
+
+☑ Monitoring
+
+↓
+
+BDIP otomatis:
+
+- membuat user LDAP
+
+- menambahkan group LDAP
+
+- menambahkan atribut Radius
+
+- menambahkan atribut aplikasi
+
+↓
+
+Semua layanan langsung dapat digunakan.
+
+==================================================================
+
+# Roadmap
+
+Tahap 1
+
+✔ CRUD User
+
+Tahap 2
+
+✔ Import User Synology
+
+Tahap 3
+
+✔ Import Group Synology
+
+Tahap 4
+
+✔ Group Management
+
+Tahap 5
+
+✔ Radius Attribute
+
+Tahap 6
+
+✔ Mikrotik Integration
+
+Tahap 7
+
+✔ Synology Integration
+
+Tahap 8
+
+✔ Authentication
+
+Tahap 9
+
+✔ Authorization (RBAC)
+
+Tahap 10
+
+✔ Keycloak SSO
+
+==================================================================
+
+# Prinsip Pengembangan
+
+Project Garuda dibangun berdasarkan prinsip:
+
+"OpenLDAP adalah Single Source of Identity."
+
+"BDIP adalah Single Source of Administration."
+
+Seluruh aplikasi akan mengambil identitas
+dari OpenLDAP.
+
+Seluruh administrasi dilakukan melalui BDIP.
+
+==================================================================
+
+# Catatan Penting
+
+Tujuan utama Project Garuda bukan hanya
+membuat aplikasi CRUD LDAP.
+
+Tujuan utama Project Garuda adalah membangun
+Identity Platform BASARNAS yang mampu
+mengintegrasikan:
+
+- Synology
+- Mikrotik Hotspot
+- Mikrotik OVPN
+- FreeRADIUS
+- Nextcloud
+- Keycloak
+- HRIS
+- Docker
+- Monitoring
+
+dengan satu sumber identitas yang sama.
+
+==================================================================
+
+Status
+
+ACCEPTED
+
+30 Juni 2026
+
+Project Garuda

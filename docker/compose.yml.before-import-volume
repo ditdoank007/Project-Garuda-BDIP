@@ -1,0 +1,48 @@
+services:
+
+  frontend:
+    container_name: bdip-frontend-dev
+
+    build:
+      context: ..
+      dockerfile: docker/frontend/Dockerfile
+
+    working_dir: /app
+
+    volumes:
+      - ../frontend:/app
+
+    environment:
+      NEXT_PUBLIC_API_URL: http://192.168.100.120:8080/api
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      - backend
+
+    restart: unless-stopped
+
+    networks:
+      - bdip-net
+
+
+  backend:
+    container_name: bdip-backend
+
+    build:
+      context: ..
+      dockerfile: docker/backend/Dockerfile
+
+    ports:
+      - "8080:8080"
+
+    restart: unless-stopped
+
+    networks:
+      - bdip-net
+
+
+networks:
+  bdip-net:
+    external: true

@@ -1,0 +1,23 @@
+dn: ou=Kepala Kantor,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Kepala Kantor
+
+dn: ou=Subbag Tata Usaha,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Subbag Tata Usaha
+
+dn: ou=Seksi Operasi,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Seksi Operasi
+
+dn: ou=Seksi Sumber Daya,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Seksi Sumber Daya
+
+dn: ou=Pos SAR Trenggalek,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Pos SAR Trenggalek
+
+dn: ou=Pos SAR Sumenep,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Pos SAR Sumenep

@@ -1,0 +1,494 @@
+using BDIP.Application.Users;
+using BDIP.Contracts.Users;
+using BDIP.Contracts.Users.Requests;
+using BDIP.Infrastructure.LDAP;
+using Microsoft.Extensions.Options;
+using System.DirectoryServices.Protocols;
+
+namespace BDIP.Infrastructure.Users;
+
+public class UserService : IUserService
+{
+    private readonly ILdapConnectionFactory _ldap;
+    private readonly LdapOptions _options;
+
+    public UserService(
+        ILdapConnectionFactory ldap,
+        IOptions<LdapOptions> options)
+    {
+        _ldap = ldap;
+        _options = options.Value;
+    }
+
+    public async Task<UserListResponse> GetUsersAsync()
+    {
+        await Task.CompletedTask;
+
+        using var connection = _ldap.Create();
+
+        var request = new SearchRequest(
+            _options.PeopleDn,
+            "(objectClass=inetOrgPerson)",
+            SearchScope.Subtree,
+            new[]
+            {
+                "uid",
+                "cn",
+                "mail",
+                "ou",
+                "shadowExpire"
+            });
+
+        var response =
+            (SearchResponse)connection.SendRequest(request);
+
+        var result = new UserListResponse();
+
+        foreach (SearchResultEntry entry in response.Entries)
+        {
+            var shadowExpire =
+                entry.Attributes["shadowExpire"]?[0]?.ToString();
+
+            var enabled =
+                string.IsNullOrWhiteSpace(shadowExpire) ||
+                shadowExpire == "-1";
+
+            result.Users.Add(new UserResponse
+            {
+                Uid = entry.Attributes["uid"]?[0]?.ToString() ?? "",
+                Username = entry.Attributes["uid"]?[0]?.ToString() ?? "",
+                FullName = entry.Attributes["cn"]?[0]?.ToString() ?? "",
+                Email = entry.Attributes["mail"]?[0]?.ToString() ?? "",
+                Unit = entry.Attributes["ou"]?[0]?.ToString() ?? "",
+                Enabled = enabled
+            });
+        }
+
+        return result;
+    }
+
+    public async Task CreateUserAsync(
+        CreateUserRequest request)
+    {
+        await Task.CompletedTask;
+
+        if (string.IsNullOrWhiteSpace(request.Username))
+        {
+            throw new ArgumentException(
+                "Username is required.",
+                nameof(request.Username));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.FullName))
+        {
+            throw new ArgumentException(
+                "Full name is required.",
+                nameof(request.FullName));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new ArgumentException(
+                "Password is required.",
+                nameof(request.Password));
+        }
+
+        using var connection = _ldap.Create();
+
+        var existingUserRequest = new SearchRequest(
+            _options.PeopleDn,
+            $"(uid={EscapeFilterValue(request.Username)})",
+            SearchScope.OneLevel,
+            "uid");
+
+        var existingUserResponse =
+            (SearchResponse)connection.SendRequest(
+                existingUserRequest);
+
+        if (existingUserResponse.Entries.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"User '{request.Username}' already exists.");
+        }
+
+        var searchRequest = new SearchRequest(
+            _options.PeopleDn,
+            "(uidNumber=*)",
+            SearchScope.Subtree,
+            new[] { "uidNumber" });
+
+        var searchResponse =
+            (SearchResponse)connection.SendRequest(searchRequest);
+
+        int uidNumber =
+            LdapUidNumberGenerator.GetNext(searchResponse);
+
+        string[] names =
+            request.FullName.Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries);
+
+        string givenName =
+            names.Length > 0
+                ? names[0]
+                : request.FullName;
+
+        string sn =
+            names.Length > 1
+                ? names[^1]
+                : givenName;
+
+        string dn =
+            $"uid={EscapeDnValue(request.Username)},{_options.PeopleDn}";
+
+        var addRequest = new AddRequest(dn);
+
+        addRequest.Attributes.Add(
+            new DirectoryAttribute(
+                "objectClass",
+                "top",
+                "person",
+                "organizationalPerson",
+                "inetOrgPerson",
+                "posixAccount",
+                "shadowAccount"));
+
+        addRequest.Attributes.Add(
+            new DirectoryAttribute("uid", request.Username));
+
+        addRequest.Attributes.Add(
+            new DirectoryAttribute("cn", request.FullName));
+
+        addRequest.Attributes.Add(
+            new DirectoryAttribute("sn", sn));
+
+        addRequest.Attributes.Add(
+            new DirectoryAttribute("givenName", givenName));
+
+        addRequest.Attributes.Add(
+            new DirectoryAttribute("displayName", request.FullName));
+
+        addRequest.Attributes.Add(
+            new DirectoryAttribute("mail", request.Email));
+
+        if (!string.IsNullOrWhiteSpace(request.Unit))
+        {
+            addRequest.Attributes.Add(
+                new DirectoryAttribute("ou", request.Unit));
+        }
+
+        addRequest.Attributes.Add(
+            new DirectoryAttribute(
+                "userPassword",
+                LdapPasswordHasher.Hash(request.Password)));
+
+        addRequest.Attributes.Add(
+            new DirectoryAttribute(
+                "uidNumber",
+                uidNumber.ToString()));
+
+        addRequest.Attributes.Add(
+            new DirectoryAttribute("gidNumber", "10000"));
+
+        addRequest.Attributes.Add(
+            new DirectoryAttribute(
+                "homeDirectory",
+                $"/home/{request.Username}"));
+
+        addRequest.Attributes.Add(
+            new DirectoryAttribute("loginShell", "/bin/bash"));
+
+        if (!request.Enabled)
+        {
+            addRequest.Attributes.Add(
+                new DirectoryAttribute("shadowExpire", "1"));
+        }
+
+        connection.SendRequest(addRequest);
+    }
+
+    public async Task UpdateUserAsync(
+        string username,
+        UpdateUserRequest request)
+    {
+        await Task.CompletedTask;
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new ArgumentException(
+                "Username is required.",
+                nameof(username));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.FullName))
+        {
+            throw new ArgumentException(
+                "Full name is required.",
+                nameof(request.FullName));
+        }
+
+        using var connection = _ldap.Create();
+
+        string dn =
+            $"uid={EscapeDnValue(username)},{_options.PeopleDn}";
+
+        string[] names =
+            request.FullName.Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries);
+
+        string givenName =
+            names.Length > 0
+                ? names[0]
+                : request.FullName;
+
+        string sn =
+            names.Length > 1
+                ? names[^1]
+                : givenName;
+
+        var currentUserRequest = new SearchRequest(
+            dn,
+            "(objectClass=inetOrgPerson)",
+            SearchScope.Base,
+            new[] { "shadowExpire" });
+
+        var currentUserResponse =
+            (SearchResponse)connection.SendRequest(
+                currentUserRequest);
+
+        if (currentUserResponse.Entries.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"User '{username}' does not exist.");
+        }
+
+        var currentUserEntry =
+            currentUserResponse.Entries[0];
+
+        bool hasShadowExpire =
+            currentUserEntry.Attributes["shadowExpire"] != null &&
+            currentUserEntry.Attributes["shadowExpire"].Count > 0;
+
+        var modifyRequest = new ModifyRequest(dn);
+
+        AddReplaceModification(
+            modifyRequest,
+            "cn",
+            request.FullName);
+
+        AddReplaceModification(
+            modifyRequest,
+            "displayName",
+            request.FullName);
+
+        AddReplaceModification(
+            modifyRequest,
+            "givenName",
+            givenName);
+
+        AddReplaceModification(
+            modifyRequest,
+            "sn",
+            sn);
+
+        AddReplaceModification(
+            modifyRequest,
+            "mail",
+            request.Email);
+
+        AddReplaceOrDeleteModification(
+            modifyRequest,
+            "ou",
+            request.Unit);
+
+        AddEnabledStatusModification(
+            modifyRequest,
+            request.Enabled,
+            hasShadowExpire);
+
+        connection.SendRequest(modifyRequest);
+    }
+
+    public async Task ResetPasswordAsync(
+        string username,
+        ResetUserPasswordRequest request)
+    {
+        await Task.CompletedTask;
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new ArgumentException(
+                "Username is required.",
+                nameof(username));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            throw new ArgumentException(
+                "New password is required.",
+                nameof(request.NewPassword));
+        }
+
+        using var connection = _ldap.Create();
+
+        string dn =
+            $"uid={EscapeDnValue(username)},{_options.PeopleDn}";
+
+        string passwordHash =
+            LdapPasswordHasher.Hash(request.NewPassword);
+
+        var modification =
+            new DirectoryAttributeModification
+            {
+                Name = "userPassword",
+                Operation = DirectoryAttributeOperation.Replace
+            };
+
+        modification.Add(passwordHash);
+
+        var modifyRequest = new ModifyRequest(dn);
+
+        modifyRequest.Modifications.Add(modification);
+
+        connection.SendRequest(modifyRequest);
+    }
+
+    public async Task UpdateUserStatusAsync(
+        string username,
+        UpdateUserStatusRequest request)
+    {
+        await Task.CompletedTask;
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new ArgumentException(
+                "Username is required.",
+                nameof(username));
+        }
+
+        using var connection = _ldap.Create();
+
+        string dn =
+            $"uid={EscapeDnValue(username)},{_options.PeopleDn}";
+
+        var modifyRequest = new ModifyRequest(dn);
+
+        AddEnabledStatusModification(
+            modifyRequest,
+            request.Enabled);
+
+        connection.SendRequest(modifyRequest);
+    }
+
+    public async Task DeleteUserAsync(
+        string username)
+    {
+        await Task.CompletedTask;
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new ArgumentException(
+                "Username is required.",
+                nameof(username));
+        }
+
+        using var connection = _ldap.Create();
+
+        string dn =
+            $"uid={EscapeDnValue(username)},{_options.PeopleDn}";
+
+        var deleteRequest = new DeleteRequest(dn);
+
+        connection.SendRequest(deleteRequest);
+    }
+
+    private static void AddEnabledStatusModification(
+        ModifyRequest request,
+        bool enabled,
+        bool hasShadowExpire = true)
+    {
+        if (enabled && !hasShadowExpire)
+        {
+            return;
+        }
+
+        var modification =
+            new DirectoryAttributeModification
+            {
+                Name = "shadowExpire",
+                Operation = enabled
+                    ? DirectoryAttributeOperation.Delete
+                    : DirectoryAttributeOperation.Replace
+            };
+
+        if (!enabled)
+        {
+            modification.Add("1");
+        }
+
+        request.Modifications.Add(modification);
+    }
+
+    private static void AddReplaceModification(
+        ModifyRequest request,
+        string attributeName,
+        string value)
+    {
+        var modification =
+            new DirectoryAttributeModification
+            {
+                Name = attributeName,
+                Operation = DirectoryAttributeOperation.Replace
+            };
+
+        modification.Add(value ?? "");
+
+        request.Modifications.Add(modification);
+    }
+
+    private static void AddReplaceOrDeleteModification(
+        ModifyRequest request,
+        string attributeName,
+        string? value)
+    {
+        var modification =
+            new DirectoryAttributeModification
+            {
+                Name = attributeName,
+                Operation = string.IsNullOrWhiteSpace(value)
+                    ? DirectoryAttributeOperation.Delete
+                    : DirectoryAttributeOperation.Replace
+            };
+
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            modification.Add(value);
+        }
+
+        request.Modifications.Add(modification);
+    }
+
+    private static string EscapeDnValue(string value)
+    {
+        return value
+            .Replace("\\", "\\\\")
+            .Replace(",", "\\,")
+            .Replace("+", "\\+")
+            .Replace("\"", "\\\"")
+            .Replace("<", "\\<")
+            .Replace(">", "\\>")
+            .Replace(";", "\\;")
+            .Replace("=", "\\=");
+    }
+
+    private static string EscapeFilterValue(string value)
+    {
+        return value
+            .Replace("\\", "\\5c")
+            .Replace("*", "\\2a")
+            .Replace("(", "\\28")
+            .Replace(")", "\\29")
+            .Replace("\0", "\\00");
+    }
+}

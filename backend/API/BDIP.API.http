@@ -1,0 +1,6 @@
+@BDIP.API_HostAddress = http://localhost:5128
+
+GET {{BDIP.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

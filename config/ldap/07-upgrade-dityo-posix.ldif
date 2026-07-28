@@ -1,0 +1,17 @@
+dn: uid=dityo.mahendro,ou=People,dc=basarnas,dc=go,dc=id
+changetype: modify
+add: objectClass
+objectClass: posixAccount
+objectClass: shadowAccount
+-
+add: uidNumber
+uidNumber: 10001
+-
+add: gidNumber
+gidNumber: 10000
+-
+add: homeDirectory
+homeDirectory: /home/dityo.mahendro
+-
+add: loginShell
+loginShell: /bin/bash

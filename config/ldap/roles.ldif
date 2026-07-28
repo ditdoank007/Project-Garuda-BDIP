@@ -1,0 +1,24 @@
+dn: ou=Kepala Kantor,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Kepala Kantor
+
+dn: ou=Kepala Subbag TU,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Kepala Subbag TU
+
+dn: ou=Kepala Seksi,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Kepala Seksi
+
+dn: ou=Koordinator,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Koordinator
+
+dn: ou=Operator,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Operator
+
+dn: ou=Rescuer,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Rescuer
+

@@ -1,0 +1,27 @@
+dn: ou=People,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Groups
+
+dn: ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Units
+
+dn: ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Roles
+
+dn: ou=Devices,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Devices
+
+dn: ou=ServiceAccounts,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: ServiceAccounts
+
+dn: ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Applications
