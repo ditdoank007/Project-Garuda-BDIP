@@ -1,0 +1,571 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { FileUp, Loader2, Upload } from "lucide-react";
+import { toast } from "sonner";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+import {
+  executeSynologyCsvImport,
+  previewSynologyCsv,
+  uploadSynologyCsv,
+} from "@/lib/api/user-import";
+
+import type {
+  SynologyImportPreview,
+  SynologyImportResult,
+} from "@/types/user-import";
+
+interface ImportUsersDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+function getErrorMessage(
+  error: unknown,
+  fallback: string,
+): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    const response = error as {
+      response?: {
+        data?: {
+          message?: string;
+          title?: string;
+          detail?: string;
+        };
+      };
+    };
+
+    return (
+      response.response?.data?.message ??
+      response.response?.data?.detail ??
+      response.response?.data?.title ??
+      fallback
+    );
+  }
+
+  return fallback;
+}
+
+export default function ImportUsersDialog({
+  open,
+  onOpenChange,
+}: ImportUsersDialogProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [selectedFile, setSelectedFile] =
+    useState<File | null>(null);
+
+  const [uploadId, setUploadId] = useState("");
+  const [preview, setPreview] =
+    useState<SynologyImportPreview | null>(null);
+
+  const [initialPassword, setInitialPassword] = useState("");
+
+  const [uploading, setUploading] = useState(false);
+  const [importing, setImporting] = useState(false);
+
+  const [result, setResult] =
+    useState<SynologyImportResult | null>(null);
+
+  function resetState() {
+    setSelectedFile(null);
+    setUploadId("");
+    setPreview(null);
+    setInitialPassword("");
+    setUploading(false);
+    setImporting(false);
+    setResult(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    onOpenChange(nextOpen);
+
+    if (!nextOpen) {
+      resetState();
+    }
+  }
+
+  async function handleUploadAndPreview() {
+    if (!selectedFile) {
+      toast.error("Please select a CSV file first.");
+      return;
+    }
+
+    if (!selectedFile.name.toLowerCase().endsWith(".csv")) {
+      toast.error("Only CSV files are supported.");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setPreview(null);
+      setResult(null);
+
+      const upload = await uploadSynologyCsv(selectedFile);
+
+      setUploadId(upload.uploadId);
+
+      const previewResponse = await previewSynologyCsv(
+        upload.uploadId,
+      );
+
+      setPreview(previewResponse);
+
+      toast.success("CSV uploaded and preview generated.");
+    } catch (error) {
+      console.error("CSV upload or preview failed:", error);
+
+      toast.error(
+        getErrorMessage(
+          error,
+          "Failed to upload or preview CSV file.",
+        ),
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleExecuteImport() {
+    if (!uploadId || !preview) {
+      toast.error("Upload and preview the CSV first.");
+      return;
+    }
+
+    if (!initialPassword) {
+      toast.error("Initial password is required.");
+      return;
+    }
+
+    if (initialPassword.length < 8) {
+      toast.error(
+        "Initial password must contain at least 8 characters.",
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      [
+        `Import ${preview.newUsers} new user(s) into LDAP?`,
+        "",
+        "Existing users will be skipped.",
+        "Group memberships from the CSV will be added.",
+        "This action cannot be undone automatically.",
+      ].join("\n"),
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setImporting(true);
+
+      const importResult = await executeSynologyCsvImport(
+        uploadId,
+        initialPassword,
+      );
+
+      setResult(importResult);
+
+      toast.success(
+        `Import completed. ${importResult.createdUsers} user(s) created.`,
+      );
+    } catch (error) {
+      console.error("CSV import failed:", error);
+
+      toast.error(
+        getErrorMessage(
+          error,
+          "Failed to import Synology users.",
+        ),
+      );
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Import Users from Synology CSV</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-5 py-2">
+          {!result && (
+            <>
+              <div className="rounded-md border bg-muted/30 p-4">
+                <p className="text-sm font-medium">
+                  Import workflow
+                </p>
+
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Select an exported Synology user CSV file, review
+                  the preview, then import new users into OpenLDAP.
+                  Existing usernames will be skipped.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="synology-csv-file">
+                  Synology user CSV file
+                </Label>
+
+                <Input
+                  ref={fileInputRef}
+                  id="synology-csv-file"
+                  type="file"
+                  accept=".csv,text/csv"
+                  disabled={uploading || importing}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+
+                    setSelectedFile(file);
+                    setUploadId("");
+                    setPreview(null);
+                    setResult(null);
+                  }}
+                />
+
+                {selectedFile && (
+                  <p className="text-xs text-muted-foreground">
+                    Selected: {selectedFile.name} (
+                    {(selectedFile.size / 1024).toFixed(1)} KB)
+                  </p>
+                )}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                disabled={
+                  !selectedFile ||
+                  uploading ||
+                  importing
+                }
+                onClick={() => {
+                  void handleUploadAndPreview();
+                }}
+              >
+                {uploading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileUp className="mr-2 h-4 w-4" />
+                )}
+
+                Upload and Preview
+              </Button>
+
+              {preview && (
+                <div className="space-y-4 rounded-md border p-4">
+                  <div>
+                    <h3 className="font-semibold">
+                      Import Preview
+                    </h3>
+
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Review the summary before importing users.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+                    <div className="rounded-md border p-3">
+                      <p className="text-muted-foreground">
+                        Total rows
+                      </p>
+                      <p className="mt-1 text-lg font-semibold">
+                        {preview.totalRows}
+                      </p>
+                    </div>
+
+                    <div className="rounded-md border p-3">
+                      <p className="text-muted-foreground">
+                        New users
+                      </p>
+                      <p className="mt-1 text-lg font-semibold">
+                        {preview.newUsers}
+                      </p>
+                    </div>
+
+                    <div className="rounded-md border p-3">
+                      <p className="text-muted-foreground">
+                        Existing users
+                      </p>
+                      <p className="mt-1 text-lg font-semibold">
+                        {preview.existingUsers}
+                      </p>
+                    </div>
+
+                    <div className="rounded-md border p-3">
+                      <p className="text-muted-foreground">
+                        Disabled users
+                      </p>
+                      <p className="mt-1 text-lg font-semibold">
+                        {preview.disabledUsers}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+                    <div className="rounded-md border p-3">
+                      <p className="text-muted-foreground">
+                        Valid rows
+                      </p>
+                      <p className="mt-1 font-semibold">
+                        {preview.validRows}
+                      </p>
+                    </div>
+
+                    <div className="rounded-md border p-3">
+                      <p className="text-muted-foreground">
+                        Duplicate usernames
+                      </p>
+                      <p className="mt-1 font-semibold">
+                        {preview.duplicateUsernames}
+                      </p>
+                    </div>
+
+                    <div className="rounded-md border p-3">
+                      <p className="text-muted-foreground">
+                        Users without email
+                      </p>
+                      <p className="mt-1 font-semibold">
+                        {preview.usersWithoutEmail}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="synology-initial-password">
+                      Initial password for newly imported users
+                    </Label>
+
+                    <Input
+                      id="synology-initial-password"
+                      type="password"
+                      autoComplete="new-password"
+                      value={initialPassword}
+                      disabled={importing}
+                      placeholder="Minimum 8 characters"
+                      onChange={(event) => {
+                        setInitialPassword(event.target.value);
+                      }}
+                    />
+
+                    <p className="text-xs text-muted-foreground">
+                      This password is applied only to users newly
+                      created from this CSV. Existing users are not
+                      modified.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">
+                      Groups found
+                    </p>
+
+                    <div className="flex flex-wrap gap-2">
+                      {preview.groupsFound.length === 0 ? (
+                        <span className="text-sm text-muted-foreground">
+                          No groups found in this CSV.
+                        </span>
+                      ) : (
+                        preview.groupsFound.map((group) => (
+                          <span
+                            key={group}
+                            className="rounded-md border px-2 py-1 text-xs"
+                          >
+                            {group}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-md border">
+                    <table className="w-full min-w-[850px] text-sm">
+                      <thead className="border-b bg-muted/40">
+                        <tr>
+                          <th className="px-3 py-2 text-left">
+                            Username
+                          </th>
+                          <th className="px-3 py-2 text-left">
+                            Full Name
+                          </th>
+                          <th className="px-3 py-2 text-left">
+                            Email
+                          </th>
+                          <th className="px-3 py-2 text-left">
+                            Status
+                          </th>
+                          <th className="px-3 py-2 text-left">
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {preview.users.slice(0, 20).map((user) => (
+                          <tr
+                            key={`${user.rowNumber}-${user.username}`}
+                            className="border-b last:border-b-0"
+                          >
+                            <td className="px-3 py-2 font-mono text-xs">
+                              {user.username}
+                            </td>
+
+                            <td className="px-3 py-2">
+                              {user.fullName}
+                            </td>
+
+                            <td className="px-3 py-2">
+                              {user.email || "-"}
+                            </td>
+
+                            <td className="px-3 py-2">
+                              {user.enabled
+                                ? "Enabled"
+                                : "Disabled"}
+                            </td>
+
+                            <td className="px-3 py-2">
+                              {user.action}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {preview.users.length > 20 && (
+                    <p className="text-xs text-muted-foreground">
+                      Showing the first 20 of {preview.users.length}{" "}
+                      rows.
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {result && (
+            <div className="space-y-4 rounded-md border p-4">
+              <div>
+                <h3 className="font-semibold">
+                  Import Completed
+                </h3>
+
+                <p className="mt-1 text-sm text-muted-foreground">
+                  The Synology CSV import has finished.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">
+                    Created users
+                  </p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {result.createdUsers}
+                  </p>
+                </div>
+
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">
+                    Skipped existing
+                  </p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {result.skippedExistingUsers}
+                  </p>
+                </div>
+
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">
+                    Disabled users
+                  </p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {result.disabledUsers}
+                  </p>
+                </div>
+
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">
+                    Memberships added
+                  </p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {result.groupMembershipsAdded}
+                  </p>
+                </div>
+              </div>
+
+              {result.errors.length > 0 && (
+                <div className="rounded-md border border-destructive/40 p-3">
+                  <p className="text-sm font-medium">
+                    Import errors
+                  </p>
+
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                    {result.errors.map((error, index) => (
+                      <li key={`${index}-${error}`}>
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          {!result && preview && (
+            <Button
+              type="button"
+              disabled={importing}
+              onClick={() => {
+                void handleExecuteImport();
+              }}
+            >
+              {importing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="mr-2 h-4 w-4" />
+              )}
+
+              Import {preview.newUsers} New User(s)
+            </Button>
+          )}
+
+          <Button
+            type="button"
+            variant="outline"
+            disabled={uploading || importing}
+            onClick={() => handleOpenChange(false)}
+          >
+            {result ? "Close" : "Cancel"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

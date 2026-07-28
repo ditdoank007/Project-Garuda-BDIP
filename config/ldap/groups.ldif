@@ -1,0 +1,83 @@
+dn: cn=Administrators,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: Administrators
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=LDAP_Admin,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: LDAP_Admin
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=HRIS_Admin,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: HRIS_Admin
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=Docker_Admin,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: Docker_Admin
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=VPN,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: VPN
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=Hotspot,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: Hotspot
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=NAS,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: NAS
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=Nextcloud,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: Nextcloud
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=Synology,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: Synology
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=Keycloak,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: Keycloak
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=FreeRADIUS,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: FreeRADIUS
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=Monitoring,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: Monitoring
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=Portainer,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: Portainer
+member: cn=dummy,dc=basarnas,dc=go,dc=id
+
+dn: cn=WiFi,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: groupOfNames
+cn: WiFi
+member: cn=dummy,dc=basarnas,dc=go,dc=id

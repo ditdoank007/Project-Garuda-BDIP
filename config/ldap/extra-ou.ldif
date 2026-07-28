@@ -1,0 +1,9 @@
+dn: ou=Policies,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalUnit
+ou: Policies
+
+dn: ou=Locations,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalUnit
+ou: Locations

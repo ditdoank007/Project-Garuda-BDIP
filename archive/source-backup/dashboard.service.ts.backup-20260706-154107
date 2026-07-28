@@ -1,0 +1,13 @@
+import { api } from "./api";
+import type { DashboardResponse } from "@/types/dashboard";
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+export async function getDashboard(): Promise<DashboardResponse> {
+  const response = await api<ApiResponse<DashboardResponse>>("/dashboard");
+  return response.data;
+}

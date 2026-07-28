@@ -1,0 +1,27 @@
+export default function WelcomeBanner() {
+  const hour = new Date().getHours();
+
+  let greeting = "Selamat Malam";
+
+  if (hour >= 5 && hour < 11) greeting = "Selamat Pagi";
+  else if (hour >= 11 && hour < 15) greeting = "Selamat Siang";
+  else if (hour >= 15 && hour < 18) greeting = "Selamat Sore";
+
+  return (
+    <div className="rounded-2xl bg-gradient-to-r from-blue-700 to-sky-500 text-white p-8 shadow-lg">
+
+      <h1 className="text-4xl font-bold">
+        {greeting}, Dityo Mahendro 👋
+      </h1>
+
+      <p className="mt-3 text-blue-100 text-lg">
+        Selamat datang di Basarnas Digital Identity Platform.
+      </p>
+
+      <p className="mt-2 text-blue-200">
+        Central Authentication • LDAP • SSO • Identity Governance
+      </p>
+
+    </div>
+  );
+}

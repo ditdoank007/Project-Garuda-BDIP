@@ -1,0 +1,91 @@
+using System.DirectoryServices.Protocols;
+
+using BDIP.Infrastructure.LDAP;
+using Microsoft.Extensions.Options;
+
+namespace BDIP.Infrastructure.Dashboard;
+
+public class LdapDashboardRepository : ILdapDashboardRepository
+{
+    private readonly ILdapConnectionFactory _ldap;
+    private readonly LdapOptions _options;
+
+    public LdapDashboardRepository(
+        ILdapConnectionFactory ldap,
+        IOptions<LdapOptions> options)
+    {
+        _ldap = ldap;
+        _options = options.Value;
+    }
+
+    public Task<int> CountUsersAsync()
+    {
+        return CountAsync(
+            _options.PeopleDn,
+            "(objectClass=inetOrgPerson)"
+        );
+    }
+
+    public async Task<int> CountGroupsAsync()
+    {
+        var groupOfNames = await CountAsync(
+            _options.GroupsDn,
+            "(objectClass=groupOfNames)"
+        );
+
+        var posixGroups = await CountAsync(
+            _options.GroupsDn,
+            "(objectClass=posixGroup)"
+        );
+
+        return groupOfNames + posixGroups;
+    }
+
+    public Task<int> CountUnitsAsync()
+    {
+        return CountAsync(
+            $"ou=Units,{_options.BaseDn}",
+            "(objectClass=organizationalRole)"
+        );
+    }
+
+    public Task<int> CountApplicationsAsync()
+    {
+        return CountAsync(
+            $"ou=Applications,{_options.BaseDn}",
+            "(objectClass=organizationalRole)"
+        );
+    }
+
+    public Task<bool> IsHealthyAsync()
+    {
+        try
+        {
+            using var connection = _ldap.Create();
+            return Task.FromResult(true);
+        }
+        catch
+        {
+            return Task.FromResult(false);
+        }
+    }
+
+    private Task<int> CountAsync(
+        string baseDn,
+        string ldapFilter)
+    {
+        using var connection = _ldap.Create();
+
+        var request = new SearchRequest(
+            baseDn,
+            ldapFilter,
+            SearchScope.Subtree,
+            "dn"
+        );
+
+        var response =
+            (SearchResponse)connection.SendRequest(request);
+
+        return Task.FromResult(response.Entries.Count);
+    }
+}

@@ -1,0 +1,110 @@
+###############################################################################
+# BDIP LDAP ORGANIZATION
+###############################################################################
+
+###############################################################################
+# UNITS
+###############################################################################
+
+dn: cn=Subbag Tata Usaha,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Subbag Tata Usaha
+description: Subbag Tata Usaha Basarnas Surabaya
+
+dn: cn=Seksi Operasi,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Seksi Operasi
+description: Seksi Operasi
+
+dn: cn=Seksi Sumber Daya,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Seksi Sumber Daya
+description: Seksi Sumber Daya
+
+dn: cn=Pos SAR Trenggalek,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Pos SAR Trenggalek
+description: Pos SAR Trenggalek
+
+dn: cn=Pos SAR Sumenep,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Pos SAR Sumenep
+description: Pos SAR Sumenep
+
+###############################################################################
+# ROLES
+###############################################################################
+
+dn: cn=Kepala Kantor,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Kepala Kantor
+
+dn: cn=Kepala Subbag TU,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Kepala Subbag TU
+
+dn: cn=Operator,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Operator
+
+dn: cn=Rescuer,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Rescuer
+
+###############################################################################
+# LOCATIONS
+###############################################################################
+
+dn: cn=Surabaya,ou=Locations,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Surabaya
+
+dn: cn=Trenggalek,ou=Locations,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Trenggalek
+
+dn: cn=Sumenep,ou=Locations,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Sumenep
+
+###############################################################################
+# APPLICATIONS
+###############################################################################
+
+dn: cn=Synology,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Synology
+
+dn: cn=Keycloak,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Keycloak
+
+dn: cn=FreeRADIUS,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: FreeRADIUS
+
+dn: cn=HRIS,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: HRIS
+
+dn: cn=Monitoring,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalRole
+cn: Monitoring
+

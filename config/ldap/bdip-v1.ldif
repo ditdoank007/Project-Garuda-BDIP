@@ -1,0 +1,142 @@
+###############################################################################
+# BDIP LDAP v1.0
+# BASARNAS SURABAYA
+###############################################################################
+
+###############################################################################
+# POLICIES
+###############################################################################
+
+dn: ou=Policies,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalUnit
+ou: Policies
+
+dn: ou=VPN,ou=Policies,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: VPN
+
+dn: ou=WiFi,ou=Policies,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: WiFi
+
+dn: ou=Password,ou=Policies,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Password
+
+dn: ou=Bandwidth,ou=Policies,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Bandwidth
+
+dn: ou=NAS,ou=Policies,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: NAS
+
+###############################################################################
+# LOCATIONS
+###############################################################################
+
+dn: ou=Locations,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: organizationalUnit
+ou: Locations
+
+dn: ou=Surabaya,ou=Locations,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Surabaya
+
+dn: ou=Trenggalek,ou=Locations,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Trenggalek
+
+dn: ou=Sumenep,ou=Locations,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Sumenep
+
+###############################################################################
+# UNITS
+###############################################################################
+
+dn: ou=Kepala Kantor,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Kepala Kantor
+
+dn: ou=Subbag Tata Usaha,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Subbag Tata Usaha
+
+dn: ou=Seksi Operasi,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Seksi Operasi
+
+dn: ou=Seksi Sumber Daya,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Seksi Sumber Daya
+
+dn: ou=Pos SAR Trenggalek,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Pos SAR Trenggalek
+
+dn: ou=Pos SAR Sumenep,ou=Units,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Pos SAR Sumenep
+
+###############################################################################
+# ROLES
+###############################################################################
+
+dn: ou=Kepala Kantor,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Kepala Kantor
+
+dn: ou=Kepala Subbag TU,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Kepala Subbag TU
+
+dn: ou=Kepala Seksi,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Kepala Seksi
+
+dn: ou=Koordinator,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Koordinator
+
+dn: ou=Operator,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Operator
+
+dn: ou=Rescuer,ou=Roles,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Rescuer
+
+###############################################################################
+# APPLICATIONS
+###############################################################################
+
+dn: ou=HRIS,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: HRIS
+
+dn: ou=Synology,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Synology
+
+dn: ou=Keycloak,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Keycloak
+
+dn: ou=FreeRADIUS,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: FreeRADIUS
+
+dn: ou=Nextcloud,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Nextcloud
+
+dn: ou=Monitoring,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Monitoring
+
+dn: ou=Portainer,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Portainer

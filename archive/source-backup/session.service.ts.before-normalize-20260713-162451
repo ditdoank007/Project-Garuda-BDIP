@@ -1,0 +1,30 @@
+import { api } from "./api";
+import type { RadiusSession, SessionsApiResponse } from "@/types/session";
+
+type BackendSessionsResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    total: number;
+    sessions: RadiusSession[];
+  };
+};
+
+export async function getSessions(): Promise<SessionsApiResponse> {
+  const response = await api<BackendSessionsResponse>("/sessions");
+  const sessions = response.data.sessions;
+
+  return {
+    success: response.success,
+    message: response.message,
+    data: {
+      summary: {
+        totalSessions: response.data.total,
+        activeSessions: sessions.filter((session) => session.active).length,
+        historicalSessions: sessions.filter((session) => !session.active).length,
+        uniqueUsers: new Set(sessions.map((session) => session.username)).size,
+      },
+      sessions,
+    },
+  };
+}

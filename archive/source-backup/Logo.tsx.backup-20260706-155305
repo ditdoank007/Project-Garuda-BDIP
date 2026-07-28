@@ -1,0 +1,24 @@
+import Link from "next/link";
+
+export default function Logo() {
+  return (
+    <Link
+      href="/dashboard"
+      className="flex items-center gap-2 text-white"
+      aria-label="Basarnas Digital Identity Platform"
+    >
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold">
+        B
+      </div>
+
+      <div className="leading-tight">
+        <div className="text-sm font-semibold tracking-wide">
+          Basarnas <span className="text-blue-400">BDIP</span>
+        </div>
+        <div className="text-xs text-slate-400">
+          Digital Identity Platform
+        </div>
+      </div>
+    </Link>
+  );
+}

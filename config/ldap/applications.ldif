@@ -1,0 +1,24 @@
+dn: ou=HRIS,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: HRIS
+
+dn: ou=Synology,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Synology
+
+dn: ou=Keycloak,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Keycloak
+
+dn: ou=FreeRADIUS,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: FreeRADIUS
+
+dn: ou=Nextcloud,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Nextcloud
+
+dn: ou=Monitoring,ou=Applications,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Monitoring
+

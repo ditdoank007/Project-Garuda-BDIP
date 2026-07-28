@@ -1,0 +1,23 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "Ldap": {
+    "Host": "openldap",
+    "Port": 389,
+    "UseSsl": false,
+    "BaseDn": "dc=basarnas,dc=go,dc=id",
+    "PeopleDn": "ou=People,dc=basarnas,dc=go,dc=id",
+    "GroupsDn": "ou=Groups,dc=basarnas,dc=go,dc=id",
+    "BindDn": "cn=admin,dc=basarnas,dc=go,dc=id",
+    "Password": "Carabiner#031",
+    "PlaceholderMemberDn": "cn=LDAP Placeholder,ou=System,dc=bdip,dc=local"
+  },
+  "BdipSession": {
+    "Secret": "HMzZNJHLlAvDgnrXcnw6iilmgPRHnTyvkWT_t6IK2hyRMlwnChQX_NuTfPU0Hdv0"
+  }
+}

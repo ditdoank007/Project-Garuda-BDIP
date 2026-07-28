@@ -1,0 +1,315 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+
+import {
+  addGroupMember,
+  removeGroupMember,
+} from "@/lib/api/groups";
+
+import type {
+  GroupMember,
+  GroupMembersResponse,
+} from "@/types/groups";
+
+import type { User } from "@/types/users";
+
+interface GroupMembersDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  data: GroupMembersResponse | null;
+  users: User[];
+  loading?: boolean;
+  error?: string;
+  onChanged: () => Promise<void>;
+}
+
+function getErrorMessage(
+  error: unknown,
+  fallback: string,
+): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    const response = error as {
+      response?: {
+        data?: {
+          message?: string;
+          title?: string;
+        };
+      };
+    };
+
+    return (
+      response.response?.data?.message ||
+      response.response?.data?.title ||
+      fallback
+    );
+  }
+
+  return fallback;
+}
+
+export default function GroupMembersDialog({
+  open,
+  onOpenChange,
+  data,
+  users,
+  loading = false,
+  error,
+  onChanged,
+}: GroupMembersDialogProps) {
+  const [selectedUsername, setSelectedUsername] =
+    useState("");
+
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setSelectedUsername("");
+    }
+  }, [open]);
+
+  const availableUsers = useMemo(() => {
+    const memberUsernames = new Set(
+      (data?.members ?? []).map((member) =>
+        member.username.toLowerCase(),
+      ),
+    );
+
+    return users.filter(
+      (user) =>
+        !memberUsernames.has(
+          user.username.toLowerCase(),
+        ),
+    );
+  }, [data?.members, users]);
+
+  async function handleAddMember() {
+    if (!data || !selectedUsername) {
+      toast.error("Please select a user.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      await addGroupMember(
+        data.groupName,
+        selectedUsername,
+      );
+
+      toast.success("Member added successfully.");
+      setSelectedUsername("");
+
+      await onChanged();
+    } catch (error) {
+      toast.error(
+        getErrorMessage(
+          error,
+          "Failed to add group member.",
+        ),
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRemoveMember(
+    member: GroupMember,
+  ) {
+    if (!data) return;
+
+    try {
+      setSaving(true);
+
+      await removeGroupMember(
+        data.groupName,
+        member.username,
+      );
+
+      toast.success("Member removed successfully.");
+
+      await onChanged();
+    } catch (error) {
+      toast.error(
+        getErrorMessage(
+          error,
+          "Failed to remove group member.",
+        ),
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>
+            Members — {data?.groupName || "Group"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-5 py-2">
+          {loading && (
+            <p className="text-sm text-muted-foreground">
+              Loading group members...
+            </p>
+          )}
+
+          {!loading && error && (
+            <p className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+
+          {!loading && !error && data && (
+            <>
+              <div className="rounded-md border bg-muted/30 p-4">
+                <Label htmlFor="group-member">
+                  Add user to this group
+                </Label>
+
+                <div className="mt-2 flex gap-2">
+                  <select
+                    id="group-member"
+                    value={selectedUsername}
+                    onChange={(event) =>
+                      setSelectedUsername(
+                        event.target.value,
+                      )
+                    }
+                    disabled={saving}
+                    className="h-10 flex-1 rounded-md border bg-background px-3 text-sm"
+                  >
+                    <option value="">
+                      Select a user...
+                    </option>
+
+                    {availableUsers.map((user) => (
+                      <option
+                        key={user.username}
+                        value={user.username}
+                      >
+                        {user.fullName} ({user.username})
+                      </option>
+                    ))}
+                  </select>
+
+                  <Button
+                    type="button"
+                    onClick={handleAddMember}
+                    disabled={
+                      saving ||
+                      !selectedUsername
+                    }
+                  >
+                    Add Member
+                  </Button>
+                </div>
+
+                {availableUsers.length === 0 && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    All available users are already members.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm text-muted-foreground">
+                  Total active members: {data.total}
+                </p>
+
+                <div className="overflow-hidden rounded-md border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-medium">
+                          Username
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium">
+                          Full Name
+                        </th>
+                        <th className="w-[120px] px-4 py-3 text-right font-medium">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {data.members.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={3}
+                            className="px-4 py-8 text-center text-muted-foreground"
+                          >
+                            No active members in this group.
+                          </td>
+                        </tr>
+                      ) : (
+                        data.members.map((member) => (
+                          <tr
+                            key={member.distinguishedName}
+                            className="border-t"
+                          >
+                            <td className="px-4 py-3 font-mono text-xs">
+                              {member.username}
+                            </td>
+
+                            <td className="px-4 py-3">
+                              {member.fullName || "-"}
+                            </td>
+
+                            <td className="px-4 py-3 text-right">
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                disabled={saving}
+                                onClick={() =>
+                                  handleRemoveMember(member)
+                                }
+                              >
+                                Remove
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={saving}
+          >
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

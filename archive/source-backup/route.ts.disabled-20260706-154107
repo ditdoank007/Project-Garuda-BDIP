@@ -1,0 +1,27 @@
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  return NextResponse.json({
+    stats: {
+      users: 254,
+      groups: 19,
+      units: 12,
+      applications: 8,
+      ldap: "healthy",
+    },
+    activities: [
+      {
+        id: 1,
+        title: "User Login",
+        description: "dityo.mahendro",
+        time: "2 minutes ago",
+      },
+      {
+        id: 2,
+        title: "Group Created",
+        description: "Administrator",
+        time: "10 minutes ago",
+      },
+    ],
+  });
+}

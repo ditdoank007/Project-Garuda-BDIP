@@ -1,0 +1,71 @@
+import { Bell, Search } from "lucide-react";
+
+export default function Header() {
+  return (
+    <header className="flex h-16 items-center justify-between border-b bg-white px-6 shadow-sm">
+
+      {/* Kiri */}
+      <div>
+
+        <h1 className="text-2xl font-bold text-slate-800">
+          Dashboard
+        </h1>
+
+        <p className="text-sm text-slate-500">
+          Welcome to Basarnas Digital Identity Platform
+        </p>
+
+      </div>
+
+      {/* Tengah */}
+      <div className="hidden md:flex items-center">
+
+        <div className="flex items-center gap-2 rounded-lg border px-3 py-2">
+
+          <Search size={18} className="text-gray-500" />
+
+          <input
+            type="text"
+            placeholder="Search..."
+            className="outline-none"
+          />
+
+        </div>
+
+      </div>
+
+      {/* Kanan */}
+      <div className="flex items-center gap-6">
+
+        <Bell
+          size={22}
+          className="cursor-pointer text-slate-600"
+        />
+
+        <div className="flex items-center gap-3">
+
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white">
+
+            D
+
+          </div>
+
+          <div>
+
+            <h2 className="font-semibold">
+              Dityo Mahendro
+            </h2>
+
+            <p className="text-sm text-gray-500">
+              Administrator
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </header>
+  );
+}

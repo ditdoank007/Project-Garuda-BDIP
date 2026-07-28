@@ -1,0 +1,58 @@
+"use client";
+
+import { Plus } from "lucide-react";
+
+import type { Location } from "@/types/location";
+
+import LocationTable from "./LocationTable";
+
+interface LocationsClientProps {
+  locations: Location[];
+}
+
+export default function LocationsClient({
+  locations,
+}: LocationsClientProps) {
+  return (
+    <div className="space-y-6">
+
+      <div className="flex items-center justify-between">
+
+        <div>
+
+          <h1 className="text-3xl font-bold">
+            Locations
+          </h1>
+
+          <p className="text-slate-500">
+            Manage BDIP Locations.
+          </p>
+
+        </div>
+
+        <button
+          className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800"
+        >
+          <Plus size={18} />
+          Add Location
+        </button>
+
+      </div>
+
+      <div className="rounded-xl border bg-white p-6 shadow-sm">
+
+        <p>Total Locations</p>
+
+        <p className="mt-2 text-4xl font-bold">
+          {locations.length}
+        </p>
+
+      </div>
+
+      <LocationTable
+        locations={locations}
+      />
+
+    </div>
+  );
+}

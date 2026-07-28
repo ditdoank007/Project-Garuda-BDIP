@@ -1,0 +1,15 @@
+import AppShell from "@/components/layout/AppShell";
+import PoliciesClient from "@/components/policies/PoliciesClient";
+import { getPolicies } from "@/services/policy.service";
+
+export default async function PoliciesPage() {
+  const response = await getPolicies();
+
+  return (
+    <AppShell>
+      <PoliciesClient
+        policies={response.data}
+      />
+    </AppShell>
+  );
+}

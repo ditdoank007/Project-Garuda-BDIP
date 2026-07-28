@@ -1,0 +1,11 @@
+dn: ou=Surabaya,ou=Locations,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Surabaya
+
+dn: ou=Trenggalek,ou=Locations,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Trenggalek
+
+dn: ou=Sumenep,ou=Locations,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Sumenep

@@ -1,0 +1,43 @@
+using BDIP.Application.Dashboard;
+using BDIP.Contracts.Dashboard;
+
+namespace BDIP.Infrastructure.Dashboard;
+
+public class DashboardService : IDashboardService
+{
+    public Task<DashboardResponse> GetDashboardAsync()
+    {
+        var response = new DashboardResponse
+        {
+            Stats =
+            {
+                Users = 254,
+                Groups = 19,
+                Units = 12,
+                Applications = 8,
+                Ldap = "Healthy"
+            },
+
+            Activities =
+            {
+                new DashboardActivity
+                {
+                    Id = 1,
+                    Title = "User Login",
+                    Description = "dityo.mahendro",
+                    Time = "2 minutes ago"
+                },
+
+                new DashboardActivity
+                {
+                    Id = 2,
+                    Title = "Group Created",
+                    Description = "Administrator",
+                    Time = "10 minutes ago"
+                }
+            }
+        };
+
+        return Task.FromResult(response);
+    }
+}

@@ -1,0 +1,189 @@
+using BDIP.Application.Users;
+using BDIP.Application.Users.Import;
+using BDIP.Contracts.Users.Import;
+using BDIP.Contracts.Users.Requests;
+using Microsoft.AspNetCore.Mvc;
+
+namespace BDIP.API.Controllers;
+
+[ApiController]
+[Route("api/users")]
+public class UsersController : ControllerBase
+{
+    private readonly IUserService _userService;
+    private readonly ISynologyUserImportService _synologyImportService;
+    private readonly ISynologyUserUploadService _synologyUserUploadService;
+
+    public UsersController(
+        IUserService userService,
+        ISynologyUserImportService synologyImportService,
+        ISynologyUserUploadService synologyUserUploadService)
+    {
+        _userService = userService;
+        _synologyImportService = synologyImportService;
+        _synologyUserUploadService = synologyUserUploadService;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetUsers()
+    {
+        var users = await _userService.GetUsersAsync();
+
+        return Ok(new
+        {
+            success = true,
+            message = "Users loaded successfully",
+            data = users
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateUser(
+        [FromBody] CreateUserRequest request)
+    {
+        await _userService.CreateUserAsync(request);
+
+        return Ok(new
+        {
+            success = true,
+            message = "User created successfully."
+        });
+    }
+
+    [HttpPut("{username}")]
+    public async Task<IActionResult> UpdateUser(
+        string username,
+        [FromBody] UpdateUserRequest request)
+    {
+        await _userService.UpdateUserAsync(
+            username,
+            request);
+
+        return Ok(new
+        {
+            success = true,
+            message = "User updated successfully."
+        });
+    }
+
+    [HttpDelete("{username}")]
+    public async Task<IActionResult> DeleteUser(
+        string username)
+    {
+        await _userService.DeleteUserAsync(username);
+
+        return Ok(new
+        {
+            success = true,
+            message = "User deleted successfully."
+        });
+    }
+
+    [HttpPost("{username}/reset-password")]
+    public async Task<IActionResult> ResetPassword(
+        string username,
+        [FromBody] ResetUserPasswordRequest request)
+    {
+        await _userService.ResetPasswordAsync(
+            username,
+            request);
+
+        return Ok(new
+        {
+            success = true,
+            message = "Password reset successfully."
+        });
+    }
+
+    [HttpPut("{username}/status")]
+    public async Task<IActionResult> UpdateStatus(
+        string username,
+        [FromBody] UpdateUserStatusRequest request)
+    {
+        await _userService.UpdateUserStatusAsync(
+            username,
+            request);
+
+        return Ok(new
+        {
+            success = true,
+            message = request.Enabled
+                ? "User enabled successfully."
+                : "User disabled successfully."
+        });
+    }
+
+    [HttpPost("import/synology/execute")]
+    public async Task<IActionResult> ExecuteSynologyImport(
+        [FromBody] ExecuteSynologyUserImportRequest request)
+    {
+        var result =
+            await _synologyImportService.ExecuteAsync(request);
+
+        return Ok(new
+        {
+            success = true,
+            message = "Synology user import completed.",
+            data = result
+        });
+    }
+
+    [HttpPost("import/synology/upload")]
+    [RequestSizeLimit(10_000_000)]
+    public async Task<IActionResult> UploadSynologyCsv(
+        IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "CSV file is required."
+            });
+        }
+
+        await using var stream = file.OpenReadStream();
+
+        var result = await _synologyUserUploadService.UploadAsync(
+            stream,
+            file.FileName);
+
+        return Ok(new
+        {
+            success = true,
+            message = "CSV uploaded successfully.",
+            data = result
+        });
+    }
+
+    [HttpGet("import/synology/uploads/{uploadId}/preview")]
+    public async Task<IActionResult> PreviewUploadedSynologyCsv(
+        string uploadId)
+    {
+        var result = await _synologyUserUploadService.PreviewAsync(
+            uploadId);
+
+        return Ok(new
+        {
+            success = true,
+            message = "Synology CSV preview loaded.",
+            data = result
+        });
+    }
+
+    [HttpPost("import/synology/uploads/execute")]
+    public async Task<IActionResult> ExecuteUploadedSynologyImport(
+        [FromBody] ExecuteUploadedSynologyUserImportRequest request)
+    {
+        var result = await _synologyUserUploadService.ExecuteAsync(
+            request);
+
+        return Ok(new
+        {
+            success = true,
+            message = "Synology user import completed.",
+            data = result
+        });
+    }
+
+}

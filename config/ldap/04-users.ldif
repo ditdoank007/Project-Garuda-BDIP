@@ -1,0 +1,12 @@
+dn: uid=dityo.mahendro,ou=People,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: dityo.mahendro
+cn: Dityo Mahendro
+sn: Mahendro
+givenName: Dityo
+displayName: Dityo Mahendro
+mail: dmahendro@gmail.com
+userPassword: Sukses-5758

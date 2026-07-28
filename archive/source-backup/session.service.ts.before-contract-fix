@@ -1,0 +1,6 @@
+import { api } from "./api";
+import type { SessionsApiResponse } from "@/types/session";
+
+export async function getSessions(): Promise<SessionsApiResponse> {
+  return api<SessionsApiResponse>("/sessions");
+}

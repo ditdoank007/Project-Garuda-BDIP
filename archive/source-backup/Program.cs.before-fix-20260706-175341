@@ -1,0 +1,86 @@
+using BDIP.Application.Auth;
+using BDIP.Infrastructure.Auth;
+using BDIP.Application.Users.Import;
+using BDIP.Application.Users;
+using BDIP.Infrastructure.Users;
+
+using BDIP.Application.Common;
+using BDIP.Infrastructure.LDAP;
+
+using BDIP.Application.Dashboard;
+using BDIP.Infrastructure.Dashboard;
+
+using BDIP.Application.Groups;
+using BDIP.Infrastructure.LDAP.Repository;
+
+using BDIP.Application.ImportGroups;
+using BDIP.Application.ImportUsers;
+using BDIP.Infrastructure.ImportGroups;
+using BDIP.Infrastructure.ImportUsers;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// CORS: izinkan browser frontend BDIP mengakses Backend API.
+const string BdipFrontendCorsPolicy = "BdipFrontendCorsPolicy";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(BdipFrontendCorsPolicy, policy =>
+    {
+        policy
+            .WithOrigins(
+                "http://192.168.100.120:3000",
+                "http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
+// Add services to the container.
+builder.Services.AddControllers();
+
+builder.Services.AddScoped<IAuthService, LdapAuthService>();
+builder.Services.AddSingleton<IBdipSessionService, BdipSessionService>();
+
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<ILdapDashboardRepository, LdapDashboardRepository>();
+
+builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<IUserDnResolver, LdapUserDnResolver>();
+builder.Services.AddScoped<ISynologyUserImportService, SynologyUserImportService>();
+builder.Services.AddScoped<ISynologyUserUploadService, SynologyUserUploadService>();
+builder.Services.AddScoped<IGroupRepository, LdapGroupRepository>();
+
+builder.Services.AddScoped<ICsvGroupParser, CsvGroupParser>();
+builder.Services.AddScoped<IGroupImportService, GroupImportService>();
+builder.Services.AddScoped<ISynologyUserCsvParser, SynologyUserCsvParser>();
+
+builder.Services.AddScoped<ILdapNumberGenerator, LdapNumberGenerator>();
+builder.Services.AddScoped<ILdapConnectionFactory, LdapConnectionFactory>();
+
+builder.Services.AddScoped<IGroupMemberReader, LdapGroupMemberReader>();
+
+builder.Services.Configure<LdapOptions>(
+    builder.Configuration.GetSection("Ldap"));
+
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddOpenApi();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+
+// CORS harus berada sebelum authorization dan endpoint controller.
+app.UseCors(BdipFrontendCorsPolicy);
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();

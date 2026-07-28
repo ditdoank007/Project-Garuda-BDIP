@@ -1,0 +1,335 @@
+using BDIP.Application.Roles;
+using BDIP.Contracts.Roles;
+using BDIP.Infrastructure.LDAP;
+
+using System.DirectoryServices.Protocols;
+
+using Microsoft.Extensions.Options;
+
+namespace BDIP.Infrastructure.Roles;
+
+public sealed class LdapRoleService : IRoleService
+{
+    private readonly ILdapConnectionFactory _factory;
+    private readonly LdapOptions _options;
+
+    public LdapRoleService(
+        ILdapConnectionFactory factory,
+        IOptions<LdapOptions> options)
+    {
+        _factory = factory;
+        _options = options.Value;
+    }
+
+    public Task<IReadOnlyList<RoleResponse>> GetAllAsync()
+    {
+        using var connection = _factory.Create();
+
+        var request = new SearchRequest(
+            RolesDn,
+            "(objectClass=groupOfNames)",
+            SearchScope.OneLevel,
+            "cn",
+            "description",
+            "member");
+
+        var response =
+            (SearchResponse)connection.SendRequest(request);
+
+        IReadOnlyList<RoleResponse> roles =
+            response.Entries
+                .Cast<SearchResultEntry>()
+                .Select(Map)
+                .OrderBy(x => x.Name)
+                .ToList();
+
+        return Task.FromResult(roles);
+    }
+
+    public Task<RoleResponse?> GetByNameAsync(
+        string name)
+    {
+        var normalizedName = NormalizeName(name);
+
+        using var connection = _factory.Create();
+
+        var request = new SearchRequest(
+            RolesDn,
+            $"(&(objectClass=groupOfNames)(cn={EscapeFilter(normalizedName)}))",
+            SearchScope.OneLevel,
+            "cn",
+            "description",
+            "member");
+
+        var response =
+            (SearchResponse)connection.SendRequest(request);
+
+        if (response.Entries.Count == 0)
+        {
+            return Task.FromResult<RoleResponse?>(null);
+        }
+
+        return Task.FromResult<RoleResponse?>(
+            Map(response.Entries[0]));
+    }
+
+    public Task<RoleResponse> CreateAsync(
+        CreateRoleRequest request)
+    {
+        var name = NormalizeName(request.Name);
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException(
+                "Role name is required.");
+        }
+
+        using var connection = _factory.Create();
+
+        if (Exists(connection, name))
+        {
+            throw new InvalidOperationException(
+                $"Role '{name}' already exists.");
+        }
+
+        var addRequest = new AddRequest(
+            $"cn={EscapeDn(name)},{RolesDn}",
+            new DirectoryAttribute(
+                "objectClass",
+                "top",
+                "groupOfNames"),
+            new DirectoryAttribute(
+                "cn",
+                name),
+            new DirectoryAttribute(
+                "member",
+                LdapDn.PlaceholderMember));
+
+        var description =
+            request.Description?.Trim() ?? "";
+
+        if (!string.IsNullOrWhiteSpace(description))
+        {
+            addRequest.Attributes.Add(
+                new DirectoryAttribute(
+                    "description",
+                    description));
+        }
+
+        connection.SendRequest(addRequest);
+
+        return Task.FromResult(
+            new RoleResponse
+            {
+                Name = name,
+                Description = description,
+                MemberCount = 0
+            });
+    }
+
+    public Task<RoleResponse?> UpdateAsync(
+        string name,
+        UpdateRoleRequest request)
+    {
+        var currentName = NormalizeName(name);
+        var newName = NormalizeName(request.Name);
+
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            throw new ArgumentException(
+                "Role name is required.");
+        }
+
+        using var connection = _factory.Create();
+
+        if (!Exists(connection, currentName))
+        {
+            return Task.FromResult<RoleResponse?>(null);
+        }
+
+        if (!string.Equals(
+            currentName,
+            newName,
+            StringComparison.OrdinalIgnoreCase))
+        {
+            if (Exists(connection, newName))
+            {
+                throw new InvalidOperationException(
+                    $"Role '{newName}' already exists.");
+            }
+
+            var modifyDnRequest = new ModifyDNRequest(
+                $"cn={EscapeDn(currentName)},{RolesDn}",
+                RolesDn,
+                $"cn={EscapeRdn(newName)}");
+
+            modifyDnRequest.DeleteOldRdn = true;
+
+            connection.SendRequest(modifyDnRequest);
+        }
+
+        var description =
+            request.Description?.Trim() ?? "";
+
+        var modification =
+            new DirectoryAttributeModification
+            {
+                Name = "description",
+                Operation =
+                    DirectoryAttributeOperation.Replace
+            };
+
+        if (!string.IsNullOrWhiteSpace(description))
+        {
+            modification.Add(description);
+        }
+
+        connection.SendRequest(
+            new ModifyRequest(
+                $"cn={EscapeDn(newName)},{RolesDn}",
+                modification));
+
+        return Task.FromResult<RoleResponse?>(
+            GetByNameInternal(
+                connection,
+                newName));
+    }
+
+    public Task<bool> DeleteAsync(
+        string name)
+    {
+        var normalizedName = NormalizeName(name);
+
+        using var connection = _factory.Create();
+
+        var role =
+            GetByNameInternal(
+                connection,
+                normalizedName);
+
+        if (role is null)
+        {
+            return Task.FromResult(false);
+        }
+
+        if (role.MemberCount > 0)
+        {
+            throw new InvalidOperationException(
+                "Role cannot be deleted while users are assigned.");
+        }
+
+        connection.SendRequest(
+            new DeleteRequest(
+                $"cn={EscapeDn(normalizedName)},{RolesDn}"));
+
+        return Task.FromResult(true);
+    }
+
+    private static RoleResponse? GetByNameInternal(
+        LdapConnection connection,
+        string name)
+    {
+        var request = new SearchRequest(
+            RolesDn,
+            $"(&(objectClass=groupOfNames)(cn={EscapeFilter(name)}))",
+            SearchScope.OneLevel,
+            "cn",
+            "description",
+            "member");
+
+        var response =
+            (SearchResponse)connection.SendRequest(request);
+
+        return response.Entries.Count == 0
+            ? null
+            : Map(response.Entries[0]);
+    }
+
+    private static bool Exists(
+        LdapConnection connection,
+        string name)
+    {
+        var request = new SearchRequest(
+            RolesDn,
+            $"(&(objectClass=groupOfNames)(cn={EscapeFilter(name)}))",
+            SearchScope.OneLevel,
+            "cn");
+
+        var response =
+            (SearchResponse)connection.SendRequest(request);
+
+        return response.Entries.Count > 0;
+    }
+
+    private static RoleResponse Map(
+        SearchResultEntry entry)
+    {
+        var members =
+            entry.Attributes["member"];
+
+        var memberCount =
+            members is null
+                ? 0
+                : members
+                    .GetValues(typeof(string))
+                    .Cast<string>()
+                    .Count(x =>
+                        !string.Equals(
+                            x,
+                            LdapDn.PlaceholderMember,
+                            StringComparison.OrdinalIgnoreCase));
+
+        return new RoleResponse
+        {
+            Name = GetAttribute(entry, "cn"),
+            Description =
+                GetAttribute(entry, "description"),
+            MemberCount = memberCount
+        };
+    }
+
+    private static string GetAttribute(
+        SearchResultEntry entry,
+        string name)
+    {
+        var attribute = entry.Attributes[name];
+
+        if (attribute is null ||
+            attribute.Count == 0)
+        {
+            return "";
+        }
+
+        return attribute[0]?.ToString() ?? "";
+    }
+
+    private static string NormalizeName(
+        string? value)
+    {
+        return value?.Trim() ?? "";
+    }
+
+    private static string EscapeFilter(
+        string value)
+    {
+        return value
+            .Replace("\\", "\\5c")
+            .Replace("*", "\\2a")
+            .Replace("(", "\\28")
+            .Replace(")", "\\29")
+            .Replace("\0", "\\00");
+    }
+
+    private static string EscapeRdn(
+        string value)
+    {
+        return value
+            .Replace("\\", "\\\\")
+            .Replace(",", "\\,")
+            .Replace("+", "\\+")
+            .Replace("\"", "\\\"")
+            .Replace("<", "\\<")
+            .Replace(">", "\\>")
+            .Replace(";", "\\;");
+    }
+}

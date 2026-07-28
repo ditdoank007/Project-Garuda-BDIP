@@ -1,0 +1,5 @@
+dn: cn=employees,ou=Groups,dc=basarnas,dc=go,dc=id
+objectClass: top
+objectClass: posixGroup
+cn: employees
+gidNumber: 10000

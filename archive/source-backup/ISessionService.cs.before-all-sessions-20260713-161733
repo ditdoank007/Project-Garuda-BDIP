@@ -1,0 +1,9 @@
+using BDIP.Contracts.Sessions;
+
+namespace BDIP.Application.Sessions;
+
+public interface ISessionService
+{
+    Task<SessionListResponse> GetActiveSessionsAsync(
+        CancellationToken cancellationToken = default);
+}

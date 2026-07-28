@@ -1,0 +1,19 @@
+dn: ou=VPN,ou=Policies,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: VPN
+
+dn: ou=WiFi,ou=Policies,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: WiFi
+
+dn: ou=Password,ou=Policies,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Password
+
+dn: ou=NAS,ou=Policies,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: NAS
+
+dn: ou=Bandwidth,ou=Policies,dc=basarnas,dc=go,dc=id
+objectClass: organizationalUnit
+ou: Bandwidth
