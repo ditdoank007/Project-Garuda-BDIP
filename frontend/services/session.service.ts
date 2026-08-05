@@ -20,6 +20,18 @@ type BackendSession = {
   serviceType: string | null;
   framedProtocol: string | null;
   framedIpAddress: string | null;
+  routerOsId: string;
+  routerAddress: string | null;
+  macAddress: string | null;
+  routerServer: string | null;
+  isRouterActive: boolean;
+  policyCode: string | null;
+  policyName: string | null;
+  downloadRate: number | null;
+  uploadRate: number | null;
+  sessionTimeout: number | null;
+  idleTimeout: number | null;
+  simultaneousUse: number | null;
 };
 
 type BackendSessionsResponse = {
@@ -41,6 +53,11 @@ export async function getSessions(): Promise<SessionsApiResponse> {
       nasIpAddress: session.nasIpAddress,
       nasIdentifier: session.nasPortId,
       framedIpAddress: session.framedIpAddress,
+      routerOsId: session.routerOsId,
+      routerAddress: session.routerAddress,
+      routerServer: session.routerServer,
+      macAddress: session.macAddress,
+      isRouterActive: session.isRouterActive,
       callingStationId: session.callingStationId,
       calledStationId: session.calledStationId,
       serviceType: session.serviceType,
@@ -53,6 +70,13 @@ export async function getSessions(): Promise<SessionsApiResponse> {
       outputBytes: session.acctOutputOctets ?? 0,
       terminateCause: session.acctTerminateCause ?? null,
       active: !session.acctStopTime,
+      policyCode: session.policyCode,
+      policyName: session.policyName,
+      downloadRate: session.downloadRate,
+      uploadRate: session.uploadRate,
+      sessionTimeout: session.sessionTimeout,
+      idleTimeout: session.idleTimeout,
+      simultaneousUse: session.simultaneousUse,
     })
   );
 

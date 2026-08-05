@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <Compile Remove="Units/LdapUnitService.cs" />
     <ProjectReference Include="..\Domain\BDIP.Domain.csproj" />
     <ProjectReference Include="..\Application\BDIP.Application.csproj" />
     <ProjectReference Include="..\Contracts\BDIP.Contracts.csproj" />
@@ -8,8 +9,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Units/LdapUnitService.cs" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.9" />
     <PackageReference Include="System.DirectoryServices.Protocols" Version="10.0.9" />
+    <PackageReference Include="tik4net" Version="3.6.0" />
   </ItemGroup>
 
   <PropertyGroup>

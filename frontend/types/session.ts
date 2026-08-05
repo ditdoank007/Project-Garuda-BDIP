@@ -4,6 +4,11 @@ export interface RadiusSession {
   nasIpAddress: string | null;
   nasIdentifier: string | null;
   framedIpAddress: string | null;
+  routerOsId: string;
+  routerAddress: string | null;
+  routerServer: string | null;
+  macAddress: string | null;
+  isRouterActive: boolean;
   callingStationId: string | null;
   calledStationId: string | null;
   serviceType: string | null;
@@ -16,6 +21,13 @@ export interface RadiusSession {
   outputBytes: number;
   terminateCause: string | null;
   active: boolean;
+  policyCode: string | null;
+  policyName: string | null;
+  downloadRate: number | null;
+  uploadRate: number | null;
+  sessionTimeout: number | null;
+  idleTimeout: number | null;
+  simultaneousUse: number | null;
 }
 
 export interface SessionSummary {

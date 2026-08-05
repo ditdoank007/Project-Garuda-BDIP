@@ -37,4 +37,32 @@ public class SessionResponse
     public string FramedProtocol { get; set; } = "";
 
     public string FramedIpAddress { get; set; } = "";
+
+    // ---------- RouterOS Live ----------
+
+    public string RouterOsId { get; set; } = "";
+
+    public string RouterAddress { get; set; } = "";
+
+    public string MacAddress { get; set; } = "";
+
+    public string RouterServer { get; set; } = "";
+
+    public bool IsRouterActive { get; set; }
+
+    // ---------- NAP Enrichment ----------
+
+    public string PolicyCode { get; set; } = "";
+
+    public string PolicyName { get; set; } = "";
+
+    public int? DownloadRate { get; set; }
+
+    public int? UploadRate { get; set; }
+
+    public int? SessionTimeout { get; set; }
+
+    public int? IdleTimeout { get; set; }
+
+    public int? SimultaneousUse { get; set; }
 }

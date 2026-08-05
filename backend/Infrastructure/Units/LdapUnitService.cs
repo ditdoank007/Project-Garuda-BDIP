@@ -134,12 +134,23 @@ public class LdapUnitService : IUnitService
                 $"Unit '{name}' already exists.");
         }
 
+        Console.WriteLine("========== CREATE UNIT ==========");
+        Console.WriteLine($"Name=[{name}]");
+        Console.WriteLine($"Location=[{locationName}]");
+
         var locationEntry =
             FindLocationEntry(
                 connection,
-                locationName)
-            ?? throw new InvalidOperationException(
+                locationName);
+
+        Console.WriteLine(
+            $"Location found = {locationEntry != null}");
+
+        if (locationEntry is null)
+        {
+            throw new InvalidOperationException(
                 $"Location '{locationName}' not found.");
+        }
 
         var unitDn =
             BuildUnitDn(name);
@@ -174,7 +185,7 @@ public class LdapUnitService : IUnitService
                 $"Unit '{name}' was not found after create.");
     }
 
-    public async Task<UnitResponse?> UpdateAsync(
+    public async Task<UnitResponse> UpdateAsync(
         string currentName,
         UpdateUnitRequest request)
     {
@@ -203,6 +214,7 @@ public class LdapUnitService : IUnitService
                 locationName)
             ?? throw new InvalidOperationException(
                 $"Location '{locationName}' not found.");
+
 
         if (!string.Equals(
                 normalizedCurrentName,
@@ -281,7 +293,7 @@ public class LdapUnitService : IUnitService
         return await GetByNameAsync(newName);
     }
 
-    public Task<bool> DeleteAsync(
+    public Task DeleteAsync(
         string name)
     {
         var normalizedName =

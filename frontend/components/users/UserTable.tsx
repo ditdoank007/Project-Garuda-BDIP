@@ -23,12 +23,15 @@ import {
 } from "@/lib/api/users";
 
 import type { User } from "@/types/users";
+import type { Policy } from "@/types/policy";
+import UserPolicySelector from "./UserPolicySelector";
 
 import UserViewDialog from "./UserViewDialog";
 import ResetPasswordDialog from "./ResetPasswordDialog";
 
 interface UserTableProps {
   users: User[];
+  policies: Policy[];
   onEdit: (user: User) => void;
 }
 
@@ -63,9 +66,10 @@ function getErrorMessage(
 }
 
 export default function UserTable({
-  users,
-  onEdit,
-}: UserTableProps) {
+    users,
+    policies,
+    onEdit,
+  }: UserTableProps) {
   const [selectedUser, setSelectedUser] =
     useState<User | null>(null);
 
@@ -153,6 +157,7 @@ export default function UserTable({
               <TableHead>Full Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Unit</TableHead>
+              <TableHead>NAP Policy</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-20 text-right">
                 Actions
@@ -164,7 +169,7 @@ export default function UserTable({
             {users.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="h-24 text-center text-muted-foreground"
                 >
                   No users found.
@@ -191,6 +196,14 @@ export default function UserTable({
 
                     <TableCell>
                       {user.unit || "-"}
+                    </TableCell>
+
+                    <TableCell className="min-w-[260px]">
+                      <UserPolicySelector
+                        user={user}
+                        policies={policies}
+                        initialPolicyId={user.policyId}
+                      />
                     </TableCell>
 
                     <TableCell>

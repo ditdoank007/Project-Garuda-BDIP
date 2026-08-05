@@ -5,13 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace BDIP.API.Controllers;
 
 [ApiController]
-[Route("api/policies")]
+[Route("api/nap/policies")]
 public class PoliciesController : ControllerBase
 {
     private readonly IPolicyService _policyService;
 
-    public PoliciesController(
-        IPolicyService policyService)
+    public PoliciesController(IPolicyService policyService)
     {
         _policyService = policyService;
     }
@@ -19,8 +18,7 @@ public class PoliciesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var policies =
-            await _policyService.GetAllAsync();
+        var policies = await _policyService.GetAllAsync();
 
         return Ok(new
         {
@@ -30,11 +28,9 @@ public class PoliciesController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(
-        Guid id)
+    public async Task<IActionResult> GetById(Guid id)
     {
-        var policy =
-            await _policyService.GetByIdAsync(id);
+        var policy = await _policyService.GetByIdAsync(id);
 
         if (policy is null)
         {
@@ -52,48 +48,53 @@ public class PoliciesController : ControllerBase
         });
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Create(
-        [FromBody] Policy policy)
+    [HttpGet("code/{code}")]
+    public async Task<IActionResult> GetByCode(string code)
     {
-        try
+        var policy = await _policyService.GetByCodeAsync(code);
+
+        if (policy is null)
         {
-            var existing =
-                await _policyService.GetByCodeAsync(policy.Code);
-
-            if (existing is not null)
-            {
-                return Conflict(new
-                {
-                    success = false,
-                    message = $"Policy code '{policy.Code}' already exists."
-                });
-            }
-
-
-            var created =
-                await _policyService.CreateAsync(policy);
-
-            return Ok(new
-            {
-                success = true,
-                message = "Policy created successfully.",
-                data = created
-            });
-        }
-        catch (InvalidOperationException exception)
-        {
-            return BadRequest(new
+            return NotFound(new
             {
                 success = false,
-                message = exception.Message
+                message = $"Policy '{code}' not found."
             });
         }
+
+        return Ok(new
+        {
+            success = true,
+            data = policy
+        });
     }
-        [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(
-        Guid id,
-        [FromBody] Policy policy)
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] Policy policy)
+    {
+        var existing = await _policyService.GetByCodeAsync(policy.Code);
+
+        if (existing is not null)
+        {
+            return Conflict(new
+            {
+                success = false,
+                message = $"Policy code '{policy.Code}' already exists."
+            });
+        }
+
+        var created = await _policyService.CreateAsync(policy);
+
+        return Ok(new
+        {
+            success = true,
+            message = "Policy created successfully.",
+            data = created
+        });
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] Policy policy)
     {
         if (id != policy.Id)
         {
@@ -104,11 +105,9 @@ public class PoliciesController : ControllerBase
             });
         }
 
-        var existing =
-            await _policyService.GetByCodeAsync(policy.Code);
+        var existing = await _policyService.GetByCodeAsync(policy.Code);
 
-        if (existing is not null &&
-            existing.Id != policy.Id)
+        if (existing is not null && existing.Id != policy.Id)
         {
             return Conflict(new
             {
@@ -119,8 +118,7 @@ public class PoliciesController : ControllerBase
 
         try
         {
-            var updated =
-                await _policyService.UpdateAsync(policy);
+            var updated = await _policyService.UpdateAsync(policy);
 
             return Ok(new
             {
@@ -138,12 +136,11 @@ public class PoliciesController : ControllerBase
             });
         }
     }
-        [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(
-        Guid id)
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
-        var policy =
-            await _policyService.GetByIdAsync(id);
+        var policy = await _policyService.GetByIdAsync(id);
 
         if (policy is null)
         {

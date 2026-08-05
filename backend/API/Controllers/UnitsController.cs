@@ -138,24 +138,9 @@ public class UnitsController : ControllerBase
     {
         try
         {
-            var deleted =
-                await _unitService.DeleteAsync(name);
+            await _unitService.DeleteAsync(name);
 
-            if (!deleted)
-            {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "Unit not found."
-                });
-            }
-
-            return Ok(new
-            {
-                success = true,
-                message = "Unit deleted successfully."
-            });
-        }
+            return NoContent();}
         catch (InvalidOperationException ex)
         {
             return Conflict(new

@@ -10,16 +10,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export async function createPolicy(
   policy: PolicyFormData,
 ) {
-  const payload = {
-    code: policy.code,
-    name: policy.name,
-    description: policy.description,
-    isActive: policy.enabled,
-  };
-
   const response = await axios.post(
-    `${API_URL}/policies`,
-    payload,
+    `${API_URL}/nap/policies`,
+    policy,
   );
 
   return response.data;
@@ -28,19 +21,9 @@ export async function createPolicy(
 export async function updatePolicy(
   policy: Policy,
 ) {
-  const payload = {
-    id: policy.id,
-    code: policy.code,
-    name: policy.name,
-    description: policy.description,
-    isActive: policy.enabled,
-    createdAt: policy.createdAt,
-    updatedAt: policy.updatedAt,
-  };
-
   const response = await axios.put(
-    `${API_URL}/policies/${policy.id}`,
-    payload,
+    `${API_URL}/nap/policies/${policy.id}`,
+    policy,
   );
 
   return response.data;
@@ -50,7 +33,7 @@ export async function deletePolicy(
   id: string,
 ) {
   const response = await axios.delete(
-    `${API_URL}/policies/${id}`,
+    `${API_URL}/nap/policies/${id}`,
   );
 
   return response.data;

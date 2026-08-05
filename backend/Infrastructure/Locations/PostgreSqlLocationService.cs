@@ -35,6 +35,7 @@ public sealed class PostgreSqlLocationService : ILocationService
 
     private readonly ApplicationDbOptions _options;
 
+
     public PostgreSqlLocationService(
         IOptions<ApplicationDbOptions> options)
     {
