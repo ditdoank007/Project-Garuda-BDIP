@@ -4,27 +4,33 @@ import { useEffect, useState } from "react";
 import { Loader2, X } from "lucide-react";
 
 import type { Unit } from "@/types/unit";
+import type { Location } from "@/types/location";
 
 type UnitFormDialogProps = {
   open: boolean;
   unit?: Unit | null;
+  locations: Location[];
   loading?: boolean;
   onClose: () => void;
   onSubmit: (data: {
     name: string;
     description: string;
+    locationName: string;
   }) => Promise<void>;
 };
 
 export default function UnitFormDialog({
   open,
   unit,
+  locations,
   loading = false,
   onClose,
   onSubmit,
 }: UnitFormDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] =
+    useState("");
+  const [locationName, setLocationName] =
     useState("");
 
   useEffect(() => {
@@ -34,7 +40,12 @@ export default function UnitFormDialog({
 
     setName(unit?.name ?? "");
     setDescription(unit?.description ?? "");
-  }, [open, unit]);
+    setLocationName(
+      unit?.locationName ??
+      locations[0]?.name ??
+      ""
+    );
+    }, [open, unit, locations]);
 
   if (!open) {
     return null;
@@ -45,10 +56,11 @@ export default function UnitFormDialog({
   ) {
     event.preventDefault();
 
-    await onSubmit({
-      name: name.trim(),
-      description: description.trim(),
-    });
+  await onSubmit({
+    name: name.trim(),
+    description: description.trim(),
+    locationName: locationName.trim(),
+  });
   }
 
   return (
@@ -81,6 +93,38 @@ export default function UnitFormDialog({
           onSubmit={handleSubmit}
           className="space-y-5 p-6"
         >
+        <div className="space-y-2">
+            <label
+              htmlFor="unit-location"
+              className="text-sm font-medium text-slate-700"
+            >
+              Location
+            </label>
+
+            <select
+              id="unit-location"
+              value={locationName}
+              onChange={(e) =>
+                setLocationName(e.target.value)
+              }
+              required
+              disabled={loading}
+              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            >
+              <option value="">
+                -- Select Location --
+              </option>
+
+              {locations.map((location) => (
+                <option
+                  key={location.name}
+                  value={location.name}
+                >
+                  {location.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="space-y-2">
             <label
               htmlFor="unit-name"
@@ -137,7 +181,9 @@ export default function UnitFormDialog({
             <button
               type="submit"
               disabled={
-                loading || name.trim().length === 0
+                loading ||
+                name.trim().length === 0 ||
+                locationName.trim().length === 0
               }
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >

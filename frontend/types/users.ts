@@ -5,6 +5,9 @@ export interface User {
   email: string;
   unit: string;
   enabled: boolean;
+
+  policyId?: string;
+  policyCode?: string;
 }
 
 export interface UserFormData {

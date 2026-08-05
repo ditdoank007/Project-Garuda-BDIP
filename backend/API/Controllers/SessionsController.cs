@@ -1,4 +1,4 @@
-using BDIP.Application.Sessions;
+using BDIP.API.Services.Sessions;
 
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,27 +8,41 @@ namespace BDIP.API.Controllers;
 [Route("api/sessions")]
 public class SessionsController : ControllerBase
 {
-    private readonly ISessionService _sessionService;
+    private readonly UnifiedSessionService _sessionService;
 
     public SessionsController(
-        ISessionService sessionService)
+        UnifiedSessionService sessionService)
     {
         _sessionService = sessionService;
     }
-
     [HttpGet]
     public async Task<IActionResult> GetSessions(
         CancellationToken cancellationToken)
     {
-        var sessions =
-            await _sessionService.GetSessionsAsync(
-                cancellationToken);
-
-        return Ok(new
+        try
         {
-            success = true,
-            message = "Sessions loaded successfully",
-            data = sessions
-        });
+            Console.WriteLine("Controller: before service");
+
+            var sessions =
+                await _sessionService.GetSessionsAsync(
+                    cancellationToken);
+
+            Console.WriteLine("Controller: service completed");
+
+            return Ok(new
+            {
+                success = true,
+                message = "Sessions loaded successfully",
+                data = sessions
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("========== SESSION ERROR ==========");
+            Console.WriteLine(ex.ToString());
+            Console.WriteLine("===================================");
+
+            throw;
+        }
     }
 }

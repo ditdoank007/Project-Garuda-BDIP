@@ -4,10 +4,11 @@ using BDIP.Contracts.Users.Requests;
 using BDIP.Infrastructure.LDAP;
 using Microsoft.Extensions.Options;
 using System.DirectoryServices.Protocols;
+using BDIP.Application.Provisioning;
 
 namespace BDIP.Infrastructure.Users;
 
-public class UserService : IUserService
+public class UserService : ILdapProvisioningService
 {
     private readonly ILdapConnectionFactory _ldap;
     private readonly LdapOptions _options;

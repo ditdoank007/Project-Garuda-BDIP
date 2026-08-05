@@ -32,8 +32,30 @@ function policyToFormData(
     code: policy.code,
     name: policy.name,
     description: policy.description ?? "",
-    priority: policy.priority,
+
     enabled: policy.enabled,
+    priority: policy.priority,
+
+    sessionTimeout: policy.sessionTimeout,
+    idleTimeout: policy.idleTimeout,
+    simultaneousUse: policy.simultaneousUse,
+
+    downloadRate: policy.downloadRate,
+    uploadRate: policy.uploadRate,
+
+    burstDownload: policy.burstDownload,
+    burstUpload: policy.burstUpload,
+
+    dailyQuota: policy.dailyQuota,
+    monthlyQuota: policy.monthlyQuota,
+    totalQuota: policy.totalQuota,
+
+    addressList: policy.addressList,
+    vlanId: policy.vlanId,
+    ipPool: policy.ipPool,
+
+    expirationDate: policy.expirationDate,
+    loginSchedule: policy.loginSchedule,
   };
 }
 

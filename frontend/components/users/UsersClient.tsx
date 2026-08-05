@@ -17,6 +17,11 @@ import {
 } from "@/lib/api/users";
 import { defaultUserForm } from "@/constants/users";
 import { getUnits } from "@/services/unit.service";
+import {
+  getNapPolicies,
+  getAllUserNap,
+} from "@/services/policy.service";
+import type { Policy } from "@/types/policy";
 import type { Unit } from "@/types/unit";
 import type {
   User,
@@ -83,6 +88,9 @@ export default function UsersClient({
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [units, setUnits] = useState<Unit[]>([]);
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [userRows, setUserRows] =
+  useState<User[]>(users);
 
   useEffect(() => {
     let active = true;
@@ -102,8 +110,62 @@ export default function UsersClient({
         }
       }
     }
+    async function loadPolicies() {
+      try {
+        const response = await getNapPolicies();
+
+        if (active) {
+          setPolicies(response.data ?? []);
+        }
+      } catch (error) {
+        console.error("Load policies failed:", error);
+
+        if (active) {
+          toast.error("Failed to load NAP policies.");
+        }
+      }
+    }
+    async function loadUserNap() {
+      try {
+        const response =
+          await getAllUserNap();
+
+        if (!active) return;
+
+        const map = new Map(
+          (response.data ?? []).map(
+            (item: any) => [
+              item.uid,
+              {
+                policyId: item.policyId,
+                policyCode: item.policyCode,
+              },
+            ],
+          ),
+        );
+
+        setUserRows(
+          users.map((user) => {
+            const nap = map.get(user.uid);
+
+            return {
+              ...user,
+              policyId: nap?.policyId,
+              policyCode: nap?.policyCode,
+            };
+          }),
+        );
+      } catch (error) {
+        console.error(
+          "Load user NAP failed:",
+          error,
+        );
+      }
+    }
 
     void loadUnits();
+    void loadPolicies();
+    void loadUserNap();
 
     return () => {
       active = false;
@@ -113,7 +175,7 @@ export default function UsersClient({
   const debouncedKeyword = useDebounce(keyword, 300);
 
   const filteredUsers = useSmartSearch(
-    users,
+    userRows,
     debouncedKeyword,
     ["username", "fullName", "email", "unit"],
   );
@@ -252,6 +314,13 @@ export default function UsersClient({
     void handleCreateUser();
   }
 
+    console.log("UsersClient", {
+    users,
+    filteredUsers,
+    policies,
+  });
+
+
   return (
     <div className="space-y-6">
       <UserToolbar
@@ -268,6 +337,7 @@ export default function UsersClient({
 
       <UserTable
         users={filteredUsers}
+        policies={policies}
         onEdit={handleEditUser}
       />
 

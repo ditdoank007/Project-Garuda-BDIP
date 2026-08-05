@@ -52,6 +52,12 @@ public class LdapLocationService : ILocationService
             (SearchResponse)connection.SendRequest(
                 request);
 
+        foreach (SearchResultEntry entry in response.Entries)
+        {
+            Console.WriteLine(
+                $"LDAP Location=[{GetAttribute(entry, "cn")}]");
+        }
+
         var locations = response.Entries
             .Cast<SearchResultEntry>()
             .Select(entry =>

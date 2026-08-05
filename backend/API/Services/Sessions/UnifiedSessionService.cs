@@ -1,0 +1,61 @@
+using BDIP.Application.Sessions;
+using BDIP.Contracts.Sessions;
+using BDIP.Infrastructure.RouterOS;
+
+namespace BDIP.API.Services.Sessions;
+
+public sealed class UnifiedSessionService
+{
+    private readonly ISessionService _sessionService;
+    private readonly IRouterOsService _routerOsService;
+
+    public UnifiedSessionService(
+        ISessionService sessionService,
+        IRouterOsService routerOsService)
+    {
+        _sessionService = sessionService;
+        _routerOsService = routerOsService;
+    }
+    
+
+    public async Task<SessionListResponse> GetSessionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var result =
+            await _sessionService.GetSessionsAsync(
+                cancellationToken);
+
+        var activeSessions =
+            await _routerOsService.GetHotspotActiveAsync();
+
+        var routerLookup =
+            activeSessions
+                .GroupBy(
+                    x => x.User,
+                    StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.First(),
+                    StringComparer.OrdinalIgnoreCase);
+
+        foreach (var session in result.Sessions)
+        {
+            if (!routerLookup.TryGetValue(
+                    session.Username,
+                    out var active))
+            {
+                continue;
+            }
+
+            session.RouterOsId = active.Id;
+            session.RouterAddress = active.Address;
+            session.MacAddress = active.MacAddress;
+            session.RouterServer = active.Server;
+            session.IsRouterActive = true;
+        }
+        
+
+        return result;
+    }
+    
+}

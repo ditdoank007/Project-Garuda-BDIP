@@ -1,0 +1,120 @@
+using BDIP.Application.Users;
+using BDIP.Contracts.Users;
+using BDIP.Contracts.Users.Requests;
+using BDIP.Persistence.PostgreSQL;
+
+using Microsoft.Extensions.Options;
+
+using Npgsql;
+
+namespace BDIP.Infrastructure.Users;
+
+public sealed class PostgreSqlUserService : IUserService
+{
+    private readonly ApplicationDbOptions _options;
+
+    public PostgreSqlUserService(
+        IOptions<ApplicationDbOptions> options)
+    {
+        _options = options.Value;
+    }
+
+    private NpgsqlDataSource CreateDataSource()
+    {
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = _options.Host,
+            Port = _options.Port,
+            Database = _options.Database,
+            Username = _options.Username,
+            Password = _options.Password,
+            SslMode = SslMode.Disable,
+            Timeout = 10,
+            CommandTimeout = 15,
+            ApplicationName = "BDIP Backend"
+        };
+
+        return NpgsqlDataSource.Create(builder.ConnectionString);
+    }
+
+    public async Task<UserListResponse> GetUsersAsync()
+    {
+        var result = new UserListResponse();
+
+        await using var dataSource = CreateDataSource();
+
+        await using var command =
+            dataSource.CreateCommand(
+                """
+                SELECT
+                    u.username,
+                    u.full_name,
+                    u.email,
+                    un.name AS unit,
+                    u.enabled
+                FROM public.users AS u
+                INNER JOIN public.units AS un
+                    ON u.unit_id = un.id
+                ORDER BY u.full_name;
+                """);
+
+        await using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            result.Users.Add(Map(reader));
+        }
+
+        return result;
+    }
+
+    public Task CreateUserAsync(
+        CreateUserRequest request)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task UpdateUserAsync(
+        string username,
+        UpdateUserRequest request)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task ResetPasswordAsync(
+        string username,
+        ResetUserPasswordRequest request)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task UpdateUserStatusAsync(
+        string username,
+        UpdateUserStatusRequest request)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task DeleteUserAsync(
+        string username)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static UserResponse Map(NpgsqlDataReader reader)
+    {
+        return new UserResponse
+        {
+            Uid = reader.GetString(0),
+            Username = reader.GetString(0),
+            FullName = reader.GetString(1),
+            Email = reader.IsDBNull(2)
+            ? string.Empty
+            : reader.GetString(2),
+            Unit = reader.IsDBNull(3)
+            ? string.Empty
+            : reader.GetString(3),
+            Enabled = reader.GetBoolean(4)
+        };
+    }
+}

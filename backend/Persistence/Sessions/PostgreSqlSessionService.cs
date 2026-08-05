@@ -1,5 +1,7 @@
 using BDIP.Application.Sessions;
 using BDIP.Contracts.Sessions;
+using BDIP.Application.NAP;
+using BDIP.Domain.NAP;
 using BDIP.Persistence.PostgreSQL;
 
 using Microsoft.Extensions.Options;
@@ -11,16 +13,24 @@ namespace BDIP.Persistence.Sessions;
 public sealed class PostgreSqlSessionService : ISessionService
 {
     private readonly PostgreSqlOptions _options;
+    private readonly IUserNapService _userNapService;
+    private readonly IPolicyService _policyService;
 
     public PostgreSqlSessionService(
-        IOptions<PostgreSqlOptions> options)
+        IOptions<PostgreSqlOptions> options,
+        IUserNapService userNapService,
+        IPolicyService policyService)
     {
         _options = options.Value;
+        _userNapService = userNapService;
+        _policyService = policyService;
     }
 
     public async Task<SessionListResponse> GetSessionsAsync(
         CancellationToken cancellationToken = default)
     {
+        Console.WriteLine("=== PostgreSqlSessionService CALLED ===");
+        Console.WriteLine("Opening PostgreSQL connection...");
         var connectionStringBuilder =
             new NpgsqlConnectionStringBuilder
             {
@@ -66,15 +76,27 @@ public sealed class PostgreSqlSessionService : ISessionService
                          radacctid DESC;
                 """);
 
-        await using var reader =
-            await command.ExecuteReaderAsync(cancellationToken);
+    var result = new SessionListResponse();
 
-        var result = new SessionListResponse();
+    var userNapLookup =
+        (await _userNapService.GetAllAsync())
+            .ToDictionary(
+                x => x.Uid,
+                StringComparer.OrdinalIgnoreCase);
+
+    var policyLookup =
+        (await _policyService.GetAllAsync())
+            .ToDictionary(
+                x => x.Code,
+                StringComparer.OrdinalIgnoreCase);
+    await using var reader =
+        await command.ExecuteReaderAsync(cancellationToken);
+
+        Console.WriteLine("Query executed.");
 
         while (await reader.ReadAsync(cancellationToken))
         {
-            result.Sessions.Add(
-                new SessionResponse
+            var session = new SessionResponse
                 {
                     RadAcctId =
                         reader.GetInt64(0),
@@ -129,10 +151,28 @@ public sealed class PostgreSqlSessionService : ISessionService
 
                     FramedIpAddress =
                         GetString(reader, 17)
-                });
+                        
+                };
+                if (userNapLookup.TryGetValue(session.Username, out var userNap))
+                {
+                    session.PolicyCode = userNap.PolicyCode ?? "";
+                    session.DownloadRate = userNap.DownloadKbps;
+                    session.UploadRate = userNap.UploadKbps;
+                    session.SessionTimeout = userNap.SessionTimeout;
+                    session.IdleTimeout = userNap.IdleTimeout;
+
+                    if (!string.IsNullOrWhiteSpace(userNap.PolicyCode) &&
+                        policyLookup.TryGetValue(userNap.PolicyCode, out var policy))
+                    {
+                        session.PolicyName = policy.Name;
+                        session.SimultaneousUse = policy.SimultaneousUse;
+                    }
+                }                result.Sessions.Add(session);
         }
 
         result.Total = result.Sessions.Count;
+
+        Console.WriteLine($"Returning {result.Total} sessions.");
 
         return result;
     }

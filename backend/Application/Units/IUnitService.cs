@@ -10,9 +10,9 @@ public interface IUnitService
 
     Task<UnitResponse> CreateAsync(CreateUnitRequest request);
 
-    Task<UnitResponse?> UpdateAsync(
+    Task<UnitResponse> UpdateAsync(
         string currentName,
         UpdateUnitRequest request);
 
-    Task<bool> DeleteAsync(string name);
+    Task DeleteAsync(string name);
 }

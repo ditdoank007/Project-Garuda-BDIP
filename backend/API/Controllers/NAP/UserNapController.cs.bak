@@ -1,0 +1,65 @@
+using BDIP.Application.NAP;
+using BDIP.Domain.NAP;
+
+using Microsoft.AspNetCore.Mvc;
+
+namespace BDIP.API.Controllers;
+
+[ApiController]
+[Route("api/nap/users")]
+public class UserNapController : ControllerBase
+{
+    private readonly IUserNapService _userNapService;
+    private readonly IPolicyService _policyService;
+
+    public UserNapController(
+        IUserNapService userNapService,
+        IPolicyService policyService)
+    {
+        _userNapService = userNapService;
+        _policyService = policyService;
+    }
+
+    [HttpGet("{uid}")]
+    public async Task<IActionResult> GetByUid(string uid)
+    {
+        var userNap =
+            await _userNapService.GetByUidAsync(uid);
+
+        if (userNap is null)
+        {
+            return NotFound(new
+            {
+                success = false,
+                message = $"User '{uid}' not found."
+            });
+        }
+
+        Policy? policy = null;
+
+        if (!string.IsNullOrWhiteSpace(userNap.PolicyCode))
+        {
+            policy =
+                await _policyService.GetByCodeAsync(
+                    userNap.PolicyCode);
+        }
+
+        return Ok(new
+        {
+            success = true,
+            data = new
+            {
+                userNap.Uid,
+                userNap.DownloadKbps,
+                userNap.UploadKbps,
+                userNap.SessionTimeout,
+                userNap.IdleTimeout,
+                userNap.PolicyCode,
+                Policy = policy,
+                userNap.IsActive,
+                userNap.CreatedAt,
+                userNap.UpdatedAt
+            }
+        });
+    }
+}

@@ -1,14 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   Clock3,
+  MoreVertical,
+  Power,
   RefreshCcw,
   Search,
   Users,
   Wifi,
 } from "lucide-react";
+
+import { api } from "@/services/api";
 
 import type {
   RadiusSession,
@@ -27,6 +31,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { getSessions } from "@/services/session.service";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 
 type SessionsClientProps = {
   initialData: SessionsData;
@@ -128,11 +146,55 @@ export default function SessionsClient({
 }: SessionsClientProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SessionFilter>("all");
+  const [selectedSession, setSelectedSession] =
+  useState<RadiusSession | null>(null);
+  const [sessionsData, setSessionsData] = useState(initialData);
+
+  useEffect(() => {
+  const timer = setInterval(async () => {
+    try {
+  const response = await getSessions();
+
+  setSessionsData(response.data);
+    } catch (error) {
+      console.error("Auto refresh gagal.", error);
+    }
+  }, 10000);
+
+  return () => clearInterval(timer);
+}, []);
+
+    async function disconnectSession(
+    sessionId: string,
+    username: string
+  ) {
+    const confirmed = window.confirm(
+      `Disconnect session milik ${username}?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await api(
+        `/routeros/disconnect/${encodeURIComponent(sessionId)}`,
+        {
+          method: "POST",
+        }
+      );
+
+      alert("Session berhasil diputus.");
+      window.location.reload();
+    } catch {
+      alert("Disconnect gagal.");
+    }
+  }
 
   const filteredSessions = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  const normalizedQuery = query.trim().toLowerCase();
 
-    return initialData.sessions.filter((session) => {
+    return sessionsData.sessions.filter((session) => {
       if (filter === "active" && !session.active) {
         return false;
       }
@@ -162,30 +224,30 @@ export default function SessionsClient({
 
       return searchable.includes(normalizedQuery);
     });
-  }, [filter, initialData.sessions, query]);
+  }, [filter, sessionsData.sessions, query]);
 
   const summaryCards = [
     {
       title: "Total Sessions",
-      value: initialData.summary.totalSessions,
+      value: sessionsData.summary.totalSessions,
       description: "Seluruh session accounting",
       icon: Activity,
     },
     {
       title: "Active Sessions",
-      value: initialData.summary.activeSessions,
+      value: sessionsData.summary.activeSessions,
       description: "Session yang masih aktif",
       icon: Wifi,
     },
     {
       title: "Session History",
-      value: initialData.summary.historicalSessions,
+      value: sessionsData.summary.historicalSessions,
       description: "Session yang telah berakhir",
       icon: Clock3,
     },
     {
       title: "Unique Users",
-      value: initialData.summary.uniqueUsers,
+      value: sessionsData.summary.uniqueUsers,
       description: "User unik pada accounting",
       icon: Users,
     },
@@ -233,8 +295,18 @@ export default function SessionsClient({
         })}
       </div>
 
-      <Card className="overflow-hidden">
-        <div className="border-b border-slate-200 p-4">
+      <Card className="overflow-hidden flex flex-col">
+        <div
+            className="
+              sticky
+              top-0
+              z-30
+              border-b
+              border-slate-200
+              bg-white
+              p-4
+            "
+          >
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="relative w-full xl:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -280,27 +352,59 @@ export default function SessionsClient({
                 <RefreshCcw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>
+
+              <Button
+                type="button"
+                variant="destructive"
+              >
+                <Power className="mr-2 h-4 w-4" />
+                Disconnect All
+              </Button>
             </div>
           </div>
 
           <p className="mt-3 text-xs text-slate-500">
-            Showing {filteredSessions.length} of {initialData.sessions.length} sessions
+            Showing {filteredSessions.length} of {sessionsData.sessions.length} sessions
           </p>
         </div>
 
-        <div className="overflow-x-auto">
+        <div
+          className="
+            max-h-[65vh]
+            overflow-x-auto
+            overflow-y-auto
+          "
+        >
           <Table>
-            <TableHeader>
+              <TableHeader
+                className="
+                  sticky
+                  top-0
+                  z-20
+                  bg-white
+                "
+              >
               <TableRow>
                 <TableHead>Status</TableHead>
                 <TableHead>User</TableHead>
+
+                <TableHead>Policy</TableHead>
+
+                <TableHead>Bandwidth</TableHead>
+
+                <TableHead>Login Limit</TableHead>
+
                 <TableHead>Access</TableHead>
                 <TableHead>Client IP</TableHead>
                 <TableHead>NAS</TableHead>
                 <TableHead>Started</TableHead>
                 <TableHead>Duration</TableHead>
-                <TableHead>Download</TableHead>
-                <TableHead>Upload</TableHead>
+
+                <TableHead>Traffic Down</TableHead>
+                <TableHead>Traffic Up</TableHead>
+                <TableHead className="w-[70px] text-center">
+                  Action
+                </TableHead>
               </TableRow>
             </TableHeader>
 
@@ -308,7 +412,7 @@ export default function SessionsClient({
               {filteredSessions.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={9}
+                    colSpan={13}
                     className="h-32 text-center text-slate-500"
                   >
                     No sessions found.
@@ -339,6 +443,34 @@ export default function SessionsClient({
                           {session.callingStationId || "-"}
                         </p>
                       </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">
+                          {session.policyCode || "-"}
+                        </p>
+
+                        <p className="text-xs text-slate-500">
+                          {session.policyName || "-"}
+                        </p>
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="text-sm">
+                        <div>
+                          ↓ {session.downloadRate ?? 0} kbps
+                        </div>
+
+                        <div>
+                          ↑ {session.uploadRate ?? 0} kbps
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      {session.simultaneousUse ?? "-"}
                     </TableCell>
 
                     <TableCell>
@@ -376,6 +508,41 @@ export default function SessionsClient({
                     <TableCell>
                       {formatBytes(session.inputBytes)}
                     </TableCell>
+                    <TableCell className="text-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+
+                      <DropdownMenuContent align="end">
+
+                        <DropdownMenuItem
+                          onClick={() => setSelectedSession(session)}
+                        >
+                          View Detail
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={() =>
+                            disconnectSession(
+                              session.routerOsId,
+                              session.username
+                            )
+                          }
+                          className="text-red-600"
+                        >
+                          Disconnect
+                        </DropdownMenuItem>
+
+                      </DropdownMenuContent>
+
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -383,6 +550,152 @@ export default function SessionsClient({
           </Table>
         </div>
       </Card>
+      <Dialog
+        open={selectedSession !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedSession(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              Session Detail
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedSession && (
+            <div className="grid grid-cols-2 gap-4 text-sm">
+
+              <div>
+                <strong>Username</strong><br />
+                {selectedSession.username}
+              </div>
+
+              <div>
+                <strong>Status</strong><br />
+                {selectedSession.active ? "Active" : "Closed"}
+              </div>
+
+              <div>
+                <strong>Client IP</strong><br />
+                {selectedSession.framedIpAddress}
+              </div>
+
+              <div>
+                <strong>NAS</strong><br />
+                {selectedSession.nasIdentifier}
+              </div>
+
+              <div>
+                <strong>NAS IP</strong><br />
+                {selectedSession.nasIpAddress}
+              </div>
+
+              <div>
+                <strong>Access</strong><br />
+                {resolveAccessType(selectedSession)}
+              </div>
+
+              <div>
+                <strong>Started</strong><br />
+                {formatDateTime(selectedSession.startTime)}
+              </div>
+
+              <div>
+                <strong>Ended</strong><br />
+                {formatDateTime(selectedSession.stopTime)}
+              </div>
+
+              <div>
+                <strong>Duration</strong><br />
+                {formatDuration(selectedSession.sessionTimeSeconds)}
+              </div>
+
+              <div>
+                <strong>Traffic Download</strong><br />
+                {formatBytes(selectedSession.inputBytes)}
+              </div>
+
+              <div>
+                <strong>Traffic Upload</strong><br />
+                {formatBytes(selectedSession.outputBytes)}
+              </div>
+
+              <div>
+                <strong>Terminate Cause</strong><br />
+                {selectedSession.terminateCause ?? "-"}
+              </div>
+              <div>
+                <strong>Router Server</strong><br />
+                {selectedSession.routerServer || "-"}
+              </div>
+
+              <div>
+                <strong>Router Address</strong><br />
+                {selectedSession.routerAddress || "-"}
+              </div>
+
+              <div>
+                <strong>RouterOS ID</strong><br />
+                {selectedSession.routerOsId || "-"}
+              </div>
+
+              <div>
+                <strong>MAC Address</strong><br />
+                {selectedSession.macAddress || "-"}
+              </div>
+
+              <div>
+                <strong>Router Status</strong><br />
+                {selectedSession.isRouterActive ? "🟢 Online" : "⚪ Offline"}
+              </div>
+
+              <div>
+                <strong>Policy Code</strong><br />
+                {selectedSession.policyCode || "-"}
+              </div>
+
+              <div>
+                <strong>Policy Name</strong><br />
+                {selectedSession.policyName || "-"}
+              </div>
+
+              <div>
+                <strong>Download Rate</strong><br />
+                {selectedSession.downloadRate
+                  ? `${selectedSession.downloadRate} kbps`
+                  : "-"}
+              </div>
+
+              <div>
+                <strong>Upload Rate</strong><br />
+                {selectedSession.uploadRate
+                  ? `${selectedSession.uploadRate} kbps`
+                  : "-"}
+              </div>
+
+              <div>
+                <strong>Session Timeout</strong><br />
+                {selectedSession.sessionTimeout || "-"}
+              </div>
+
+              <div>
+                <strong>Idle Timeout</strong><br />
+                {selectedSession.idleTimeout || "-"}
+              </div>
+
+              <div>
+                <strong>Simultaneous Use</strong><br />
+                {selectedSession.simultaneousUse || "-"}
+              </div>
+
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+    
   );
 }

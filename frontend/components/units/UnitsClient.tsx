@@ -8,9 +8,14 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
-
+import { getLocations } from "@/services/location.service";
+import type { Location } from "@/types/location";
 import {
   createUnit,
   deleteUnit,
@@ -32,19 +37,45 @@ export default function UnitsClient({
   const [units, setUnits] =
     useState<Unit[]>(initialUnits);
 
+
   const [search, setSearch] = useState("");
 
   const [formOpen, setFormOpen] =
     useState(false);
 
+
   const [selectedUnit, setSelectedUnit] =
     useState<Unit | null>(null);
+
 
   const [deleteTarget, setDeleteTarget] =
     useState<Unit | null>(null);
 
+
   const [loading, setLoading] =
     useState(false);
+
+
+  const [locations, setLocations] =
+    useState<Location[]>([]);
+
+    useEffect(() => {
+        async function loadLocations() {
+          try {
+            const result = await getLocations();
+            setLocations(result.data ?? []);
+          } catch (error) {
+            console.error(error);
+
+            toast.error(
+              "Gagal memuat daftar Location."
+            );
+          }
+        }
+
+        loadLocations();
+      }, []);
+
 
   const filteredUnits = useMemo(() => {
     const keyword = search
@@ -86,6 +117,7 @@ export default function UnitsClient({
   async function handleSubmit(data: {
     name: string;
     description: string;
+    locationName: string;
   }) {
     setLoading(true);
 
@@ -380,6 +412,7 @@ export default function UnitsClient({
       <UnitFormDialog
         open={formOpen}
         unit={selectedUnit}
+        locations={locations}
         loading={loading}
         onClose={() => {
           if (!loading) {
