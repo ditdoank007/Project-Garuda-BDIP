@@ -9,13 +9,25 @@ public class DashboardResponse
 
 public class DashboardStats
 {
-    public int Users { get; set; }
+    // Executive Dashboard KPI
+    public int TotalUsers { get; set; }
 
+    public int ActiveSessions { get; set; }
+
+    public int HotspotSessions { get; set; }
+
+    public int VpnSessions { get; set; }
+
+    public int TotalPolicies { get; set; }
+
+    public int NasOnline { get; set; }
+
+    public int Applications { get; set; }
+
+    // Supporting Information
     public int Groups { get; set; }
 
     public int Units { get; set; }
-
-    public int Applications { get; set; }
 
     public string Ldap { get; set; } = "Healthy";
 }

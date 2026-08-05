@@ -1,10 +1,16 @@
 export interface DashboardStats {
-  users: number;
+  totalUsers: number;
+  activeSessions: number;
+  hotspotSessions: number;
+  vpnSessions: number;
+  totalPolicies: number;
+  nasOnline: number;
+
   groups: number;
   units: number;
   applications: number;
 
-  ldap: "healthy" | "warning" | "offline";
+  ldap: string;
 }
 
 export interface DashboardActivity {
