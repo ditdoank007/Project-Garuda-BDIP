@@ -7,6 +7,8 @@ public interface IUserService
 {
     Task<UserListResponse> GetUsersAsync();
 
+    Task<int> CountUsersAsync();
+
     Task CreateUserAsync(
         CreateUserRequest request
     );

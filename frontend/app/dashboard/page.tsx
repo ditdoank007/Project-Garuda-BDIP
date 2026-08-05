@@ -26,7 +26,7 @@ export default async function DashboardPage() {
 
         <StatsCard
           title="Users"
-          value={dashboard.stats.users.toString()}
+          value={dashboard.stats.totalUsers.toString()}
           subtitle="LDAP Accounts"
           icon={Users}
           color="bg-blue-600"

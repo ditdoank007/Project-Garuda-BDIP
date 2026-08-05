@@ -75,6 +75,22 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
         return result;
     }
 
+    public async Task<int> CountUsersAsync()
+    {
+        await using var dataSource = CreateDataSource();
+
+        await using var command =
+            dataSource.CreateCommand(
+                """
+                SELECT COUNT(*)
+                FROM public.users;
+                """);
+
+        var result = await command.ExecuteScalarAsync();
+
+        return Convert.ToInt32(result);
+    }
+
     public async Task CreateUserAsync(
         CreateUserRequest request)
     {
