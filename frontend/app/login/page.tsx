@@ -2,15 +2,12 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { login } from "@/services/auth.service";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://192.168.100.120:8080/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,6 +18,7 @@ export default function LoginPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    console.log("LOGIN SUBMIT");
 
     if (!username.trim() || !password) {
       toast.error("Username dan password wajib diisi.");
@@ -30,41 +28,10 @@ export default function LoginPage() {
     try {
       setSubmitting(true);
 
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: username.trim(),
-          password,
-        }),
-      });
-
-      const responseText = await response.text();
-
-      let result: {
-        success?: boolean;
-        message?: string;
-      } = {};
-
-      if (responseText.trim()) {
-        try {
-          result = JSON.parse(responseText);
-        } catch {
-          throw new Error(
-            `Respons server tidak valid (HTTP ${response.status}).`,
-          );
-        }
-      }
-
-      if (!response.ok || !result.success) {
-        throw new Error(
-          result.message ??
-            `Login gagal (HTTP ${response.status}).`,
-        );
-      }
+      await login(
+        username.trim(),
+        password,
+      );
 
       toast.success("Login berhasil.");
       router.replace("/dashboard");

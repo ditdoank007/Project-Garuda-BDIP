@@ -1,13 +1,16 @@
+import {
+  apiGet,
+  apiPost,
+  apiPut,
+  apiDelete,
+} from "@/services/api";
+
 import type {
   CreateUnitRequest,
   Unit,
   UnitApiResponse,
   UpdateUnitRequest,
 } from "@/types/unit";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://192.168.100.120:8080/api";
 
 async function parseResponse<T>(
   response: Response
@@ -36,13 +39,8 @@ async function parseResponse<T>(
 }
 
 export async function getUnits(): Promise<Unit[]> {
-  const response = await fetch(`${API_URL}/units`, {
-    cache: "no-store",
-    credentials: "include",
-  });
-
   const result =
-    await parseResponse<Unit[]>(response);
+    await apiGet<UnitApiResponse<Unit[]>>("/units");
 
   return result.data ?? [];
 }
@@ -50,17 +48,11 @@ export async function getUnits(): Promise<Unit[]> {
 export async function createUnit(
   request: CreateUnitRequest
 ): Promise<Unit> {
-  const response = await fetch(`${API_URL}/units`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(request),
-  });
-
   const result =
-    await parseResponse<Unit>(response);
+    await apiPost<UnitApiResponse<Unit>>(
+      "/units",
+      request,
+    );
 
   if (!result.data) {
     throw new Error(
@@ -75,20 +67,11 @@ export async function updateUnit(
   currentName: string,
   request: UpdateUnitRequest
 ): Promise<Unit> {
-  const response = await fetch(
-    `${API_URL}/units/${encodeURIComponent(currentName)}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(request),
-    }
-  );
-
   const result =
-    await parseResponse<Unit>(response);
+    await apiPut<UnitApiResponse<Unit>>(
+      `/units/${encodeURIComponent(currentName)}`,
+      request,
+    );
 
   if (!result.data) {
     throw new Error(
@@ -102,13 +85,7 @@ export async function updateUnit(
 export async function deleteUnit(
   name: string
 ): Promise<void> {
-  const response = await fetch(
-    `${API_URL}/units/${encodeURIComponent(name)}`,
-    {
-      method: "DELETE",
-      credentials: "include",
-    }
+  await apiDelete<UnitApiResponse<never>>(
+    `/units/${encodeURIComponent(name)}`
   );
-
-  await parseResponse<never>(response);
 }

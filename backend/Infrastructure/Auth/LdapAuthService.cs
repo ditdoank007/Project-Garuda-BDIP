@@ -23,6 +23,7 @@ public class LdapAuthService : IAuthService
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
+
         await Task.CompletedTask;
 
         if (string.IsNullOrWhiteSpace(request.Username) ||
@@ -99,25 +100,58 @@ public class LdapAuthService : IAuthService
                 "Invalid username or password.");
         }
 
-        var memberOf = entry.Attributes["memberOf"];
 
-        var role = "User";
+        var isAdministrator = false;
 
-        if (memberOf != null)
+        var adminSearch = new SearchRequest(
+            _options.GroupsDn,
+            "(cn=Administrators)",
+            SearchScope.OneLevel,
+            new[] { "member" });
+
+        var adminResponse =
+            (SearchResponse)adminConnection.SendRequest(adminSearch);
+
+        if (adminResponse.Entries.Count == 1)
         {
-            foreach (var item in memberOf)
-            {
-                var groupDn = item?.ToString() ?? "";
+            var members =
+                adminResponse.Entries[0].Attributes["member"];
 
-                if (groupDn.StartsWith(
-                    "cn=Administrators,",
-                    StringComparison.OrdinalIgnoreCase))
+            if (members != null)
+            {
+                foreach (var item in members)
                 {
-                    role = "Administrator";
-                    break;
+
+                    if (item is byte[] bytes)
+                    {
+                    }
+
+                    var memberDn =
+                        item is byte[] memberBytes
+                            ? System.Text.Encoding.UTF8.GetString(memberBytes)
+                            : item?.ToString() ?? "";
+
+
+                    if (string.Equals(
+                        memberDn,
+                        userDn,
+                        StringComparison.OrdinalIgnoreCase))
+                    {
+
+                        isAdministrator = true;
+                        break;
+                    }
                 }
             }
         }
+
+        if (!isAdministrator)
+        {
+            throw new UnauthorizedAccessException(
+                "Access denied. Only BDIP Administrators are allowed to sign in.");
+        }
+
+        var role = "Administrator";
 
         return new LoginResponse
         {

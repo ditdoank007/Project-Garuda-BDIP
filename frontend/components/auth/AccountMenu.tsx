@@ -3,21 +3,14 @@
 import { LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://192.168.100.120:8080/api";
+import { getCurrentUser } from "@/services/auth.service";
+import { apiPost } from "@/services/api";
 
 type AuthUser = {
   username: string;
   fullName: string;
   email: string;
   role: string;
-};
-
-type ApiResponse<T> = {
-  success: boolean;
-  data?: T;
 };
 
 export default function AccountMenu() {
@@ -30,19 +23,10 @@ export default function AccountMenu() {
   useEffect(() => {
     async function loadCurrentUser() {
       try {
-        const response = await fetch(`${API_URL}/auth/me`, {
-          credentials: "include",
-          cache: "no-store",
-        });
+        const user = await getCurrentUser();
 
-        if (!response.ok) {
-          return;
-        }
-
-        const result = (await response.json()) as ApiResponse<AuthUser>;
-
-        if (result.success && result.data) {
-          setUser(result.data);
+        if (user) {
+          setUser(user);
         }
       } catch {
         // Middleware tetap menjadi lapisan proteksi halaman.
@@ -56,10 +40,7 @@ export default function AccountMenu() {
     setLoading(true);
 
     try {
-      await fetch(`${API_URL}/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
+      await apiPost("/auth/logout", {});
     } finally {
       router.replace("/login");
       router.refresh();
