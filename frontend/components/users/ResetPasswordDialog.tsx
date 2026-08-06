@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { apiPost } from "@/services/api";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -61,37 +62,19 @@ export default function ResetPasswordDialog({
     try {
       setSaving(true);
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const url = `${apiUrl}/users/${encodeURIComponent(user.username)}/reset-password`;
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const result = await apiPost<{
+        success?: boolean;
+        message?: string;
+      }>(
+        `/users/${encodeURIComponent(user.username)}/reset-password`,
+        {
           newPassword,
-        }),
-      });
+        },
+      );
 
-      const responseText = await response.text();
-
-      let result: { success?: boolean; message?: string } = {};
-
-      if (responseText.trim()) {
-        try {
-          result = JSON.parse(responseText);
-        } catch {
-          throw new Error(
-            `API response is invalid. HTTP ${response.status}: ${responseText}`,
-          );
-        }
-      }
-
-      if (!response.ok || result.success !== true) {
+      if (result.success !== true) {
         throw new Error(
-          result.message ??
-            `Password reset failed. HTTP ${response.status}: ${responseText || "(empty response)"}`,
+          result.message ?? "Password reset failed.",
         );
       }
 

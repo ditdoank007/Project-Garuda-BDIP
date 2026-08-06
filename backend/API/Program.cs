@@ -46,7 +46,8 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(
                 "http://192.168.100.120:3000",
-                "http://localhost:3000")
+                "http://localhost:3000",
+                "http://bdip.sarsurabaya.id")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

@@ -8,6 +8,7 @@ export async function api<T>(
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     cache: "no-store",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(options?.headers ?? {}),
@@ -15,9 +16,53 @@ export async function api<T>(
   });
 
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status}`);
+    let message = `API Error: ${response.status}`;
+
+    try {
+      const error = await response.json();
+
+      if (error?.message) {
+        message = error.message;
+      }
+    } catch {
+    }
+
+    throw new Error(message);
   }
 
   return response.json();
 }
 
+
+
+export function apiGet<T>(endpoint: string) {
+  return api<T>(endpoint, {
+    method: "GET",
+  });
+}
+
+export function apiPost<T>(
+  endpoint: string,
+  body: unknown,
+) {
+  return api<T>(endpoint, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function apiPut<T>(
+  endpoint: string,
+  body: unknown,
+) {
+  return api<T>(endpoint, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function apiDelete<T>(endpoint: string) {
+  return api<T>(endpoint, {
+    method: "DELETE",
+  });
+}

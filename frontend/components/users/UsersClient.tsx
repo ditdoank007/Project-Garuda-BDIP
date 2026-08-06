@@ -14,7 +14,7 @@ import ImportUsersDialog from "./ImportUsersDialog";
 import {
   createUser,
   updateUser,
-} from "@/lib/api/users";
+} from "@/services/users.service"
 import { defaultUserForm } from "@/constants/users";
 import { getUnits } from "@/services/unit.service";
 import {
@@ -33,6 +33,11 @@ interface UsersClientProps {
 }
 
 type DialogMode = "create" | "edit";
+
+interface UserNapInfo {
+  policyId?: string;
+  policyCode?: string;
+}
 
 function getErrorMessage(
   error: unknown,
@@ -132,7 +137,10 @@ export default function UsersClient({
 
         if (!active) return;
 
-        const map = new Map(
+        const map = new Map<
+          string,
+          UserNapInfo
+        >(
           (response.data ?? []).map(
             (item: any) => [
               item.uid,

@@ -1,4 +1,5 @@
 import { CalendarDays, LogIn, Moon } from "lucide-react";
+import Link from "next/link";
 import KpiCard from "./KpiCard";
 import GaugeCard from "@/components/dashboard/GaugeCard";
 import LoginActivityChart from "@/components/dashboard/LoginActivityChart";
@@ -14,8 +15,11 @@ import {
 } from "@/components/dashboard/panels";
 
 import { Users, Wifi, RadioTower, Shield, Server, Boxes } from "lucide-react";
+import { getDashboard } from "@/services/dashboard.service";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+
+  const dashboard = await getDashboard();
   return (
     <main className="min-h-screen bg-[#08111f] text-white">
       {/* Header */}
@@ -37,12 +41,15 @@ export default function LandingPage() {
               Today (31 July 2026)
             </button>
 
-            <button className="rounded-lg bg-blue-600 px-6 py-2 font-semibold hover:bg-blue-700">
+            <Link
+              href="/login"
+              className="rounded-lg bg-blue-600 px-6 py-2 font-semibold hover:bg-blue-700"
+            >
               <span className="flex items-center gap-2">
                 <LogIn className="h-4 w-4" />
                 LOGIN
               </span>
-            </button>
+            </Link>
 
             <button className="rounded-lg border border-slate-700 bg-slate-900 p-2">
               <Moon className="h-5 w-5" />
@@ -56,49 +63,49 @@ export default function LandingPage() {
       <div className="mx-auto max-w-[1800px] px-8 pt-8 pb-6">
         <div className="grid gap-6 lg:grid-cols-3 xl:grid-cols-6">
           <KpiCard
-            title="Total Users"
-            value="2.184"
-            subtitle="▲ 12 today"
+            title="Total Pengguna"
+            value={dashboard.stats.totalUsers.toLocaleString()}
+            subtitle="Akun Terdaftar"
             icon={Users}
             color="bg-blue-600"
           />
 
           <KpiCard
             title="Active Sessions"
-            value="31"
-            subtitle="▲ 2 vs yesterday"
+            value={dashboard.stats.activeSessions.toLocaleString()}
+            subtitle="RADIUS Active Sessions"
             icon={Wifi}
             color="bg-green-600"
           />
 
           <KpiCard
             title="Hotspot Sessions"
-            value="18"
-            subtitle="▲ 3 vs yesterday"
+            value={dashboard.stats.hotspotSessions.toLocaleString()}
+            subtitle="RouterOS Hotspot"
             icon={RadioTower}
             color="bg-orange-500"
           />
 
           <KpiCard
             title="OVPN / PPP"
-            value="13"
-            subtitle="▼ 1 vs yesterday"
+            value={dashboard.stats.vpnSessions.toLocaleString()}
+            subtitle="PPP Active Sessions"
             icon={Shield}
             color="bg-purple-600"
           />
 
           <KpiCard
             title="NAS Online"
-            value="29/30"
-            subtitle="96.7% Online"
+            value={dashboard.stats.nasOnline.toLocaleString()}
+            subtitle="RouterOS Connected"
             icon={Server}
             color="bg-sky-600"
           />
 
           <KpiCard
             title="Applications"
-            value="12"
-            subtitle="▲ 1 New"
+            value={dashboard.stats.applications.toLocaleString()}
+            subtitle="Integrated Applications"
             icon={Boxes}
             color="bg-fuchsia-600"
           />
@@ -109,10 +116,10 @@ export default function LandingPage() {
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
           <GaugeCard
             title="Active Sessions"
-            value={31}
-            max={100}
+            value={dashboard.stats.activeSessions}
+            max={1000}
             color="#22c55e"
-            subtitle="Currently Active"
+            subtitle="RADIUS Active Sessions"
           />
 
           <GaugeCard

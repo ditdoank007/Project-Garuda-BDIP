@@ -20,7 +20,7 @@ import {
 import {
   deleteUser,
   updateUserStatus,
-} from "@/lib/api/users";
+} from "@/services/users.service"
 
 import type { User } from "@/types/users";
 import type { Policy } from "@/types/policy";

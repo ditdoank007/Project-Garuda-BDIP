@@ -1,8 +1,15 @@
+import { apiGet, apiPost } from "@/services/api";
+
 export type AuthUser = {
   username: string;
   fullName: string;
   email: string;
   role: string;
+};
+
+type LoginRequest = {
+  username: string;
+  password: string;
 };
 
 type ApiResponse<T> = {
@@ -11,24 +18,36 @@ type ApiResponse<T> = {
   data?: T;
 };
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://192.168.100.120:8080/api";
+
+export async function login(
+  username: string,
+  password: string,
+): Promise<AuthUser> {
+  const result =
+    await apiPost<ApiResponse<AuthUser>>(
+      "/auth/login",
+      {
+        username,
+        password,
+      },
+    );
+
+  if (!result.success || !result.data) {
+    throw new Error(
+      result.message ?? "Login gagal.",
+    );
+  }
+
+  return result.data;
+}
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
-    const response = await fetch(`${API_URL}/auth/me`, {
-      cache: "no-store",
-      credentials: "include",
-    });
+    const result = await apiGet<ApiResponse<AuthUser>>("/auth/me");
 
-    if (!response.ok) {
-      return null;
-    }
-
-    const result = (await response.json()) as ApiResponse<AuthUser>;
-
-    return result.success && result.data ? result.data : null;
+    return result.success && result.data
+      ? result.data
+      : null;
   } catch {
     return null;
   }

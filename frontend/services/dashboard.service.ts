@@ -1,8 +1,5 @@
 import type { DashboardResponse } from "@/types/dashboard";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://192.168.100.120:8080/api";
+import { apiGet } from "@/services/api";
 
 type ApiResponse = {
   success: boolean;
@@ -10,31 +7,13 @@ type ApiResponse = {
   data?: DashboardResponse;
 };
 
+
 export async function getDashboard(): Promise<DashboardResponse> {
-  const response = await fetch(`${API_URL}/dashboard`, {
-    cache: "no-store",
-  });
+  const result = await apiGet<ApiResponse>("/dashboard");
 
-  const responseText = await response.text();
-
-  let result: ApiResponse = {
-    success: false,
-  };
-
-  if (responseText.trim()) {
-    try {
-      result = JSON.parse(responseText) as ApiResponse;
-    } catch {
-      throw new Error(
-        `Dashboard API returned invalid JSON (HTTP ${response.status}).`,
-      );
-    }
-  }
-
-  if (!response.ok || !result.success || !result.data) {
+  if (!result.success || !result.data) {
     throw new Error(
-      result.message ??
-        `Failed to load dashboard (HTTP ${response.status}).`,
+      result.message ?? "Failed to load dashboard.",
     );
   }
 

@@ -41,6 +41,22 @@ public class DashboardService : IDashboardService
 
         var hotspot = await _routerOsService.GetHotspotActiveAsync();
 
+        var routerLookup =
+            hotspot
+                .GroupBy(
+                    x => x.User,
+                    StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.First(),
+                    StringComparer.OrdinalIgnoreCase);
+
+        foreach (var session in sessions.Sessions)
+        {
+            session.IsRouterActive =
+                routerLookup.ContainsKey(session.Username);
+        }
+
         var groups = await _ldapDashboardRepository.CountGroupsAsync();
 
         var units = await _ldapDashboardRepository.CountUnitsAsync();
@@ -54,7 +70,9 @@ public class DashboardService : IDashboardService
             Stats =
             {
                 TotalUsers = totalUsers,
-                ActiveSessions = sessions.Total,
+                ActiveSessions =
+                    sessions.Sessions.Count(
+                        x => x.AcctStopTime == null),
                 HotspotSessions = hotspot.Count,
                 VpnSessions = 0,
                 TotalPolicies = policies.Count(),
