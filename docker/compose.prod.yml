@@ -1,0 +1,72 @@
+services:
+
+  nginx:
+    container_name: bdip-nginx
+    build:
+      context: ..
+      dockerfile: docker/nginx/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    networks:
+      - bdip-net
+
+  frontend:
+    container_name: bdip-frontend
+    build:
+      context: ..
+      dockerfile: docker/frontend/Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_URL: /api
+
+    environment:
+      BDIP_INTERNAL_API_URL: http://backend:8080/api
+    expose:
+      - "3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - bdip-net
+
+
+  openldap:
+    container_name: openldap
+    image: osixia/openldap:1.5.0
+    restart: unless-stopped
+
+    environment:
+      LDAP_ORGANISATION: "Basarnas Surabaya"
+      LDAP_DOMAIN: "basarnas.go.id"
+
+    ports:
+      - "389:389"
+      - "636:636"
+
+    volumes:
+      - ../config/ldap:/bootstrap
+      - ../data/ldap/config:/etc/ldap/slapd.d
+      - ../data/ldap/database:/var/lib/ldap
+
+    networks:
+      - bdip-net
+
+  backend:
+    container_name: bdip-backend
+    env_file:
+      - backend-db.env
+    build:
+      context: ..
+      dockerfile: docker/backend/Dockerfile.prod
+    expose:
+      - "8080"
+    restart: unless-stopped
+    networks:
+      - bdip-net
+
+networks:
+  bdip-net:
+    external: true
