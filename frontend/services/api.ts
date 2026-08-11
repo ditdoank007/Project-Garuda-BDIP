@@ -35,9 +35,13 @@ export async function api<T>(
 
 
 
-export function apiGet<T>(endpoint: string) {
+export function apiGet<T>(
+  endpoint: string,
+  options?: RequestInit,
+) {
   return api<T>(endpoint, {
     method: "GET",
+    ...options,
   });
 }
 

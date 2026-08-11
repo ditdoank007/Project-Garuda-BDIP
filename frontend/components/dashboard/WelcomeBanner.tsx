@@ -1,3 +1,6 @@
+import { headers } from "next/headers";
+import { getCurrentUser } from "@/services/auth.service";
+
 function getGreetingFromServerTime() {
   const jakartaTime = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Jakarta",
@@ -22,13 +25,18 @@ function getGreetingFromServerTime() {
   return "Selamat Malam";
 }
 
-export default function WelcomeBanner() {
+export default async function WelcomeBanner() {
   const greeting = getGreetingFromServerTime();
+  const requestHeaders = await headers();
+  const cookieHeader = requestHeaders.get("cookie");
+  const user = await getCurrentUser(cookieHeader ?? undefined);
+
+  const displayName = user?.fullName?.trim() || user?.username || "User";
 
   return (
     <section className="rounded-2xl bg-gradient-to-r from-blue-700 to-sky-500 px-8 py-7 text-white shadow-lg">
       <h2 className="text-4xl font-bold tracking-tight">
-        {greeting}, Dityo Mahendro 👋
+        {greeting}, {displayName} 👋
       </h2>
 
       <p className="mt-4 text-lg text-blue-50">
