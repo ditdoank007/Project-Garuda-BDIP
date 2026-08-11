@@ -41,9 +41,17 @@ export async function login(
   return result.data;
 }
 
-export async function getCurrentUser(): Promise<AuthUser | null> {
+export async function getCurrentUser(
+  cookieHeader?: string,
+): Promise<AuthUser | null> {
   try {
-    const result = await apiGet<ApiResponse<AuthUser>>("/auth/me");
+    const result = await apiGet<ApiResponse<AuthUser>>("/auth/me", {
+      headers: cookieHeader
+        ? {
+            Cookie: cookieHeader,
+          }
+        : undefined,
+    });
 
     return result.success && result.data
       ? result.data
