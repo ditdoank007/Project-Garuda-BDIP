@@ -15,7 +15,7 @@ type UnitFormDialogProps = {
   onSubmit: (data: {
     name: string;
     description: string;
-    locationName: string;
+    locationId: string;
   }) => Promise<void>;
 };
 
@@ -30,7 +30,7 @@ export default function UnitFormDialog({
   const [name, setName] = useState("");
   const [description, setDescription] =
     useState("");
-  const [locationName, setLocationName] =
+  const [locationId, setLocationId] =
     useState("");
 
   useEffect(() => {
@@ -40,9 +40,15 @@ export default function UnitFormDialog({
 
     setName(unit?.name ?? "");
     setDescription(unit?.description ?? "");
-    setLocationName(
-      unit?.locationName ??
-      locations[0]?.name ??
+    const selectedLocation =
+      locations.find(
+        (location) =>
+          location.name === unit?.locationName
+      );
+
+    setLocationId(
+      selectedLocation?.id ??
+      locations[0]?.id ??
       ""
     );
     }, [open, unit, locations]);
@@ -59,7 +65,7 @@ export default function UnitFormDialog({
   await onSubmit({
     name: name.trim(),
     description: description.trim(),
-    locationName: locationName.trim(),
+    locationId: locationId.trim(),
   });
   }
 
@@ -103,9 +109,9 @@ export default function UnitFormDialog({
 
             <select
               id="unit-location"
-              value={locationName}
+              value={locationId}
               onChange={(e) =>
-                setLocationName(e.target.value)
+                setLocationId(e.target.value)
               }
               required
               disabled={loading}
@@ -117,8 +123,8 @@ export default function UnitFormDialog({
 
               {locations.map((location) => (
                 <option
-                  key={location.name}
-                  value={location.name}
+                  key={location.id}
+                  value={location.id}
                 >
                   {location.name}
                 </option>
@@ -183,7 +189,7 @@ export default function UnitFormDialog({
               disabled={
                 loading ||
                 name.trim().length === 0 ||
-                locationName.trim().length === 0
+                locationId.trim().length === 0
               }
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >

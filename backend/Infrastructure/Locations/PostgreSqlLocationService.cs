@@ -77,8 +77,12 @@ public sealed class PostgreSqlLocationService : ILocationService
                     location_type_code,
                     is_active,
                     created_at,
-                    updated_at
-                FROM public.locations
+                    updated_at,
+                (
+                    SELECT COUNT(*)
+                    FROM public.units u
+                    WHERE u.location_id = public.locations.id
+                ) AS unit_count                FROM public.locations
                 ORDER BY name;
                 """);
 
@@ -266,7 +270,14 @@ public sealed class PostgreSqlLocationService : ILocationService
                 $"Location '{normalizedName}' not found.");
         }
 
-        await using var command =
+        
+    if (location.UnitCount > 0)
+    {
+        throw new InvalidOperationException(
+            $"Location '{normalizedName}' cannot be deleted because it is still assigned to {location.UnitCount} unit(s).");
+    }
+
+await using var command =
             dataSource.CreateCommand(
                 """
                 DELETE FROM public.locations
@@ -299,8 +310,12 @@ public sealed class PostgreSqlLocationService : ILocationService
                     location_type_code,
                     is_active,
                     created_at,
-                    updated_at
-                FROM public.locations
+                    updated_at,
+                (
+                    SELECT COUNT(*)
+                    FROM public.units u
+                    WHERE u.location_id = public.locations.id
+                ) AS unit_count                FROM public.locations
                 WHERE LOWER(name) = LOWER(@name);
                 """);
 
@@ -331,8 +346,12 @@ public sealed class PostgreSqlLocationService : ILocationService
                     location_type_code,
                     is_active,
                     created_at,
-                    updated_at
-                FROM public.locations
+                    updated_at,
+                (
+                    SELECT COUNT(*)
+                    FROM public.units u
+                    WHERE u.location_id = public.locations.id
+                ) AS unit_count                FROM public.locations
                 WHERE LOWER(code) = LOWER(@code);
                 """);
 
@@ -363,8 +382,12 @@ public sealed class PostgreSqlLocationService : ILocationService
                     location_type_code,
                     is_active,
                     created_at,
-                    updated_at
-                FROM public.locations
+                    updated_at,
+                (
+                    SELECT COUNT(*)
+                    FROM public.units u
+                    WHERE u.location_id = public.locations.id
+                ) AS unit_count                FROM public.locations
                 WHERE id = @id;
                 """);
 
@@ -384,10 +407,11 @@ public sealed class PostgreSqlLocationService : ILocationService
     {
         return new LocationResponse
         {
+            Id = record.Id,
             Name = record.Name,
             Description = record.Description,
             Type = GetTypeName(record.LocationTypeCode),
-            UnitCount = 0
+            UnitCount = record.UnitCount
         };
     }
 
@@ -395,10 +419,11 @@ public sealed class PostgreSqlLocationService : ILocationService
     {
         return new LocationResponse
         {
+            Id = reader.GetGuid(0),
             Name = reader.GetString(2),
             Description = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
             Type = GetTypeName(reader.GetString(4)),
-            UnitCount = 0
+            UnitCount = checked((int)reader.GetInt64(8))
         };
     }
 
@@ -412,7 +437,8 @@ public sealed class PostgreSqlLocationService : ILocationService
             reader.GetString(4),
             reader.GetBoolean(5),
             reader.GetFieldValue<DateTime>(6),
-            reader.GetFieldValue<DateTime>(7));
+            reader.GetFieldValue<DateTime>(7),
+        checked((int)reader.GetInt64(8)));
     }
 
     private static string NormalizeName(string value)
@@ -508,5 +534,6 @@ public sealed class PostgreSqlLocationService : ILocationService
         string LocationTypeCode,
         bool IsActive,
         DateTime CreatedAt,
-        DateTime UpdatedAt);
+        DateTime UpdatedAt,
+        int UnitCount);
 }

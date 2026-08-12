@@ -9,13 +9,13 @@ export interface Unit {
 export interface CreateUnitRequest {
   name: string;
   description: string;
-  locationName: string;
+  locationId: string;
 }
 
 export interface UpdateUnitRequest {
   name: string;
   description: string;
-  locationName: string;
+  locationId: string;
 }
 
 export interface UnitApiResponse<T> {
