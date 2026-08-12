@@ -1,5 +1,7 @@
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api";
+  typeof window === "undefined"
+    ? (process.env.BDIP_INTERNAL_API_URL ?? "http://backend:8080/api")
+    : (process.env.NEXT_PUBLIC_API_URL ?? "/api");
 
 export async function api<T>(
   endpoint: string,

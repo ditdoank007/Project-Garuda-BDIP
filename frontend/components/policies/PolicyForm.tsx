@@ -26,6 +26,26 @@ export default function PolicyForm({
     });
   }
 
+  function displayNumber(value: number | null | undefined) {
+    return value === 0 || value == null
+      ? ""
+      : String(value);
+  }
+
+  function displayMbps(value: number | null | undefined) {
+    return value === 0 || value == null
+      ? ""
+      : String(value / 1000);
+  }
+
+  function parseNumber(value: string) {
+    return value === "" ? 0 : Number(value);
+  }
+
+  function parseMbps(value: string) {
+    return value === "" ? 0 : Number(value) * 1000;
+  }
+
   return (
     <div className="space-y-6">
 
@@ -63,9 +83,11 @@ export default function PolicyForm({
           <Label>Priority</Label>
           <Input
             type="number"
-            value={policy.priority}
+            value={displayNumber(policy.priority)}
             disabled={readOnly}
-            onChange={(e) => update("priority", Number(e.target.value))}
+            onChange={(e) =>
+              update("priority", parseNumber(e.target.value))
+            }
           />
         </div>
 
@@ -88,10 +110,13 @@ export default function PolicyForm({
           <Label>Simultaneous Use</Label>
           <Input
             type="number"
-            value={policy.simultaneousUse ?? 1}
+            value={displayNumber(policy.simultaneousUse ?? 1)}
             disabled={readOnly}
             onChange={(e) =>
-              update("simultaneousUse", Number(e.target.value))
+              update(
+                "simultaneousUse",
+                parseNumber(e.target.value),
+              )
             }
           />
         </div>
@@ -124,49 +149,57 @@ export default function PolicyForm({
         <h3 className="font-semibold text-lg">Bandwidth</h3>
 
         <div>
-          <Label>Download Rate (Kbps)</Label>
+          <Label>Download Rate (Mbps)</Label>
           <Input
             type="number"
-            value={policy.downloadRate ?? 0}
+            step="0.1"
+            min="0"
+            value={displayMbps(policy.downloadRate)}
             disabled={readOnly}
             onChange={(e) =>
-              update("downloadRate", Number(e.target.value))
+              update("downloadRate", parseMbps(e.target.value))
             }
           />
         </div>
 
         <div>
-          <Label>Upload Rate (Kbps)</Label>
+          <Label>Upload Rate (Mbps)</Label>
           <Input
             type="number"
-            value={policy.uploadRate ?? 0}
+            step="0.1"
+            min="0"
+            value={displayMbps(policy.uploadRate)}
             disabled={readOnly}
             onChange={(e) =>
-              update("uploadRate", Number(e.target.value))
+              update("uploadRate", parseMbps(e.target.value))
             }
           />
         </div>
 
         <div>
-          <Label>Burst Download</Label>
+          <Label>Burst Download (Mbps)</Label>
           <Input
             type="number"
-            value={policy.burstDownload ?? 0}
+            step="0.1"
+            min="0"
+            value={displayMbps(policy.burstDownload)}
             disabled={readOnly}
             onChange={(e) =>
-              update("burstDownload", Number(e.target.value))
+              update("burstDownload", parseMbps(e.target.value))
             }
           />
         </div>
 
         <div>
-          <Label>Burst Upload</Label>
+          <Label>Burst Upload (Mbps)</Label>
           <Input
             type="number"
-            value={policy.burstUpload ?? 0}
+            step="0.1"
+            min="0"
+            value={displayMbps(policy.burstUpload)}
             disabled={readOnly}
             onChange={(e) =>
-              update("burstUpload", Number(e.target.value))
+              update("burstUpload", parseMbps(e.target.value))
             }
           />
         </div>
@@ -179,10 +212,10 @@ export default function PolicyForm({
           <Label>Session Timeout (Seconds)</Label>
           <Input
             type="number"
-            value={policy.sessionTimeout ?? 0}
+            value={displayNumber(policy.sessionTimeout)}
             disabled={readOnly}
             onChange={(e) =>
-              update("sessionTimeout", Number(e.target.value))
+              update("sessionTimeout", parseNumber(e.target.value))
             }
           />
         </div>
@@ -191,10 +224,10 @@ export default function PolicyForm({
           <Label>Idle Timeout (Seconds)</Label>
           <Input
             type="number"
-            value={policy.idleTimeout ?? 0}
+            value={displayNumber(policy.idleTimeout)}
             disabled={readOnly}
             onChange={(e) =>
-              update("idleTimeout", Number(e.target.value))
+              update("idleTimeout", parseNumber(e.target.value))
             }
           />
         </div>
@@ -207,10 +240,10 @@ export default function PolicyForm({
           <Label>Daily Quota (MB)</Label>
           <Input
             type="number"
-            value={policy.dailyQuota ?? 0}
+            value={displayNumber(policy.dailyQuota)}
             disabled={readOnly}
             onChange={(e) =>
-              update("dailyQuota", Number(e.target.value))
+              update("dailyQuota", parseNumber(e.target.value))
             }
           />
         </div>
@@ -219,10 +252,10 @@ export default function PolicyForm({
           <Label>Monthly Quota (MB)</Label>
           <Input
             type="number"
-            value={policy.monthlyQuota ?? 0}
+            value={displayNumber(policy.monthlyQuota)}
             disabled={readOnly}
             onChange={(e) =>
-              update("monthlyQuota", Number(e.target.value))
+              update("monthlyQuota", parseNumber(e.target.value))
             }
           />
         </div>
@@ -231,10 +264,10 @@ export default function PolicyForm({
           <Label>Total Quota (MB)</Label>
           <Input
             type="number"
-            value={policy.totalQuota ?? 0}
+            value={displayNumber(policy.totalQuota)}
             disabled={readOnly}
             onChange={(e) =>
-              update("totalQuota", Number(e.target.value))
+              update("totalQuota", parseNumber(e.target.value))
             }
           />
         </div>

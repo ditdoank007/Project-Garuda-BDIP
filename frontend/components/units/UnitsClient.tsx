@@ -117,7 +117,7 @@ export default function UnitsClient({
   async function handleSubmit(data: {
     name: string;
     description: string;
-    locationName: string;
+    locationId: string;
   }) {
     setLoading(true);
 

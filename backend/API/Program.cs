@@ -1,4 +1,6 @@
+using BDIP.Application.Applications;
 using BDIP.Application.Auth;
+using BDIP.Infrastructure.Applications;
 using BDIP.Infrastructure.Auth;
 using BDIP.Application.Users.Import;
 using BDIP.Application.Users;
@@ -114,6 +116,7 @@ builder.Services.AddScoped<ISessionService, PostgreSqlSessionService>();
 builder.Services.AddScoped<IRoleService, LdapRoleService>();
 builder.Services.AddScoped<ILocationService, PostgreSqlLocationService>();
 builder.Services.AddScoped<IPolicyService, PostgreSqlPolicyService>();
+builder.Services.AddScoped<IApplicationService, PostgreSqlApplicationService>();
 builder.Services.AddScoped<INapSynchronizationService, NapSynchronizationService>();
 
 builder.Services.AddScoped<

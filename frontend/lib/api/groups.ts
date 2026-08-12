@@ -6,7 +6,10 @@ import type {
   GroupMembersResponse,
 } from "@/types/groups";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL =
+  typeof window === "undefined"
+    ? (process.env.BDIP_INTERNAL_API_URL ?? "http://backend:8080/api")
+    : (process.env.NEXT_PUBLIC_API_URL ?? "/api");
 
 export async function getGroups(): Promise<Group[]> {
   const response = await axios.get<Group[]>(
