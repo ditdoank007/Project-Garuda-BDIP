@@ -10,111 +10,155 @@ import {
   YAxis,
 } from "recharts";
 
-const data = [
-  { time: "00:00", value: 6 },
-  { time: "02:00", value: 8 },
-  { time: "04:00", value: 12 },
-  { time: "06:00", value: 18 },
-  { time: "08:00", value: 42 },
-  { time: "09:00", value: 38 },
-  { time: "10:00", value: 54 },
-  { time: "12:00", value: 36 },
-  { time: "14:00", value: 30 },
-  { time: "16:00", value: 45 },
-  { time: "18:00", value: 48 },
-  { time: "20:00", value: 25 },
-  { time: "22:00", value: 33 },
-];
+import type { SynologyConnectionActivity } from "@/types/dashboard";
 
-export default function ActiveSessionsChart() {
+interface Props {
+  connections: SynologyConnectionActivity[];
+}
+
+function formatTime(value: string) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export default function ActiveSessionsChart({ connections }: Props) {
+  const safeConnections = Array.isArray(connections)
+    ? connections
+    : [];
+
+  const grouped = new Map<string, number>();
+
+  for (const connection of safeConnections) {
+    if (!connection.currentConnected) {
+      continue;
+    }
+
+    const label = formatTime(connection.time);
+
+    grouped.set(
+      label,
+      (grouped.get(label) ?? 0) + 1,
+    );
+  }
+
+  const data = Array.from(grouped.entries())
+    .map(([time, value]) => ({
+      time,
+      value,
+    }))
+    .slice(-24);
+
   return (
     <div className="rounded-xl border border-slate-800/40 bg-[#111b2d] p-5">
 
       <div className="mb-5 flex items-center justify-between">
 
-        <h2 className="text-lg font-semibold text-white">
-          Active Sessions Over Time
-        </h2>
+        <div>
+          <h2 className="text-lg font-semibold text-white">
+            Active Sessions Over Time
+          </h2>
 
-        <div className="flex gap-2">
+          <p className="mt-1 text-xs text-slate-400">
+            Synology current connected sessions
+          </p>
+        </div>
 
-          <button className="rounded bg-blue-700 px-3 py-1 text-xs">
-            Today
-          </button>
-
-          <button className="rounded bg-slate-800 px-3 py-1 text-xs text-slate-300">
-            7 Days
-          </button>
-
-          <button className="rounded bg-slate-800 px-3 py-1 text-xs text-slate-300">
-            30 Days
-          </button>
-
+        <div className="rounded bg-green-900/40 px-3 py-1 text-xs text-green-300">
+          {safeConnections.filter(
+            (connection) => connection.currentConnected,
+          ).length} Active
         </div>
 
       </div>
 
-      <div className="h-[300px]">
+      {data.length === 0 ? (
+        <div className="flex h-[300px] items-center justify-center text-sm text-slate-500">
+          No active Synology sessions available
+        </div>
+      ) : (
+        <div className="h-[300px]">
 
-        <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%">
 
-          <AreaChart data={data}>
+            <AreaChart data={data}>
 
-            <defs>
+              <defs>
 
-              <linearGradient id="sessionFill" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient
+                  id="synologySessionFill"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
 
-                <stop
-                  offset="0%"
-                  stopColor="#22c55e"
-                  stopOpacity={0.5}
-                />
+                  <stop
+                    offset="0%"
+                    stopColor="#22c55e"
+                    stopOpacity={0.5}
+                  />
 
-                <stop
-                  offset="100%"
-                  stopColor="#22c55e"
-                  stopOpacity={0}
-                />
+                  <stop
+                    offset="100%"
+                    stopColor="#22c55e"
+                    stopOpacity={0}
+                  />
 
-              </linearGradient>
+                </linearGradient>
 
-            </defs>
+              </defs>
 
-            <CartesianGrid
-              stroke="#263447"
-              strokeDasharray="4 4"
-            />
+              <CartesianGrid
+                stroke="#263447"
+                strokeDasharray="4 4"
+              />
 
-            <XAxis
-              dataKey="time"
-              stroke="#64748b"
-            />
+              <XAxis
+                dataKey="time"
+                stroke="#64748b"
+              />
 
-            <YAxis
-              stroke="#64748b"
-            />
+              <YAxis
+                stroke="#64748b"
+                allowDecimals={false}
+              />
 
-            <Tooltip
-              contentStyle={{
-                background: "#0f172a",
-                border: "1px solid #334155",
-                borderRadius: "10px",
-              }}
-            />
+              <Tooltip
+                contentStyle={{
+                  background: "#0f172a",
+                  border: "1px solid #334155",
+                  borderRadius: "10px",
+                }}
+                labelStyle={{
+                  color: "#cbd5e1",
+                }}
+              />
 
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke="#22c55e"
-              strokeWidth={3}
-              fill="url(#sessionFill)"
-            />
+              <Area
+                type="monotone"
+                dataKey="value"
+                name="Active Sessions"
+                stroke="#22c55e"
+                strokeWidth={3}
+                fill="url(#synologySessionFill)"
+              />
 
-          </AreaChart>
+            </AreaChart>
 
-        </ResponsiveContainer>
+          </ResponsiveContainer>
 
-      </div>
+        </div>
+      )}
 
     </div>
   );

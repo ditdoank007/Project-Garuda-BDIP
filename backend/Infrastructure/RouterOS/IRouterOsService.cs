@@ -8,5 +8,15 @@ public interface IRouterOsService
 
     Task<List<RouterOsActiveSession>> GetHotspotActiveAsync();
 
+    Task<List<RouterOsActiveSession>> GetPppActiveAsync();
+
+    Task<List<RouterOsOvpnInterface>> GetOvpnInterfacesAsync();
+
+    Task<List<RouterOsOvpnTraffic>> GetOvpnTrafficAsync();
+
+    Task<object> GetPppRawAsync();
+
+    Task<object> GetOvpnInterfacesRawAsync();
+
     Task DisconnectHotspotSessionAsync(string sessionId);
 }

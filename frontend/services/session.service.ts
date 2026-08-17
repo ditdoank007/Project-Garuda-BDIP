@@ -25,6 +25,10 @@ type BackendSession = {
   macAddress: string | null;
   routerServer: string | null;
   isRouterActive: boolean;
+
+  routerOsInterface: string | null;
+  routerOsRxBytes: number;
+  routerOsTxBytes: number;
   policyCode: string | null;
   policyName: string | null;
   downloadRate: number | null;
@@ -58,6 +62,11 @@ export async function getSessions(): Promise<SessionsApiResponse> {
       routerServer: session.routerServer,
       macAddress: session.macAddress,
       isRouterActive: session.isRouterActive,
+
+      routerOsInterface: session.routerOsInterface,
+      routerOsRxBytes: session.routerOsRxBytes ?? 0,
+      routerOsTxBytes: session.routerOsTxBytes ?? 0,
+
       callingStationId: session.callingStationId,
       calledStationId: session.calledStationId,
       serviceType: session.serviceType,
@@ -69,7 +78,7 @@ export async function getSessions(): Promise<SessionsApiResponse> {
       inputBytes: session.acctInputOctets ?? 0,
       outputBytes: session.acctOutputOctets ?? 0,
       terminateCause: session.acctTerminateCause ?? null,
-      active: !session.acctStopTime,
+      active: session.isRouterActive === true,
       policyCode: session.policyCode,
       policyName: session.policyName,
       downloadRate: session.downloadRate,

@@ -9,6 +9,10 @@ export interface RadiusSession {
   routerServer: string | null;
   macAddress: string | null;
   isRouterActive: boolean;
+
+  routerOsInterface: string | null;
+  routerOsRxBytes: number;
+  routerOsTxBytes: number;
   callingStationId: string | null;
   calledStationId: string | null;
   serviceType: string | null;

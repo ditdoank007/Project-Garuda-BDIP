@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   Clock3,
@@ -45,6 +45,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+
+type LiveBandwidth = {
+  downloadKbps: number;
+  uploadKbps: number;
+};
+
+type LiveBandwidthMap = Record<number, LiveBandwidth>;
 
 type SessionsClientProps = {
   initialData: SessionsData;
@@ -150,12 +157,87 @@ export default function SessionsClient({
   useState<RadiusSession | null>(null);
   const [sessionsData, setSessionsData] = useState(initialData);
 
+  const [liveBandwidth, setLiveBandwidth] =
+    useState<LiveBandwidthMap>({});
+
+  const [detailTraffic, setDetailTraffic] = useState<{
+    rxKbps: number;
+    txKbps: number;
+  } | null>(null);
+
+  const detailTrafficPrevious = useRef<{
+    rxBytes: number;
+    txBytes: number;
+    timestamp: number;
+  } | null>(null);
+
+  const previousCounters = useRef<
+    Record<
+      number,
+      {
+        rx: number;
+        tx: number;
+        timestamp: number;
+      }
+    >
+  >({});
+
+
   useEffect(() => {
   const timer = setInterval(async () => {
     try {
-  const response = await getSessions();
+      const response = await getSessions();
 
-  setSessionsData(response.data);
+      const now = Date.now();
+
+      const nextBandwidth: LiveBandwidthMap = {};
+
+      response.data.sessions.forEach((session) => {
+        if (!session.active) {
+          return;
+        }
+
+        const rx = session.routerOsRxBytes;
+        const tx = session.routerOsTxBytes;
+
+        const previous =
+          previousCounters.current[session.id];
+
+        if (previous) {
+          const elapsedSeconds =
+            (now - previous.timestamp) / 1000;
+
+          if (elapsedSeconds > 0) {
+            const rxDelta =
+              Math.max(0, rx - previous.rx);
+
+            const txDelta =
+              Math.max(0, tx - previous.tx);
+
+            nextBandwidth[session.id] = {
+              downloadKbps:
+                (rxDelta * 8) /
+                elapsedSeconds /
+                1000,
+
+              uploadKbps:
+                (txDelta * 8) /
+                elapsedSeconds /
+                1000,
+            };
+          }
+        }
+
+        previousCounters.current[session.id] = {
+          rx,
+          tx,
+          timestamp: now,
+        };
+      });
+
+      setLiveBandwidth(nextBandwidth);
+
+      setSessionsData(response.data);
     } catch (error) {
       console.error("Auto refresh gagal.", error);
     }
@@ -163,6 +245,105 @@ export default function SessionsClient({
 
   return () => clearInterval(timer);
 }, []);
+
+    // detail-traffic-polling
+    useEffect(() => {
+      if (!selectedSession || !selectedSession.active) {
+        setDetailTraffic(null);
+        detailTrafficPrevious.current = null;
+        return;
+      }
+
+      let cancelled = false;
+
+      const poll = async () => {
+        try {
+          const params = new URLSearchParams({
+            username: selectedSession.username,
+            address: selectedSession.framedIpAddress ?? "",
+            server: selectedSession.routerServer ?? "",
+          });
+
+          const response = await fetch(
+            `/api/sessions/live-traffic?${params.toString()}`
+          );
+
+          if (!response.ok) {
+            return;
+          }
+
+          const data = await response.json();
+
+          if (
+            cancelled ||
+            !data.success ||
+            !data.found
+          ) {
+            return;
+          }
+
+          const now = Date.now();
+
+          const previous =
+            detailTrafficPrevious.current;
+
+          if (previous) {
+            const elapsedSeconds =
+              (now - previous.timestamp) / 1000;
+
+            if (elapsedSeconds > 0) {
+              const rxDelta =
+                Math.max(
+                  0,
+                  data.rxBytes - previous.rxBytes
+                );
+
+              const txDelta =
+                Math.max(
+                  0,
+                  data.txBytes - previous.txBytes
+                );
+
+              setDetailTraffic({
+                rxKbps:
+                  (rxDelta * 8) /
+                  elapsedSeconds /
+                  1000,
+
+                txKbps:
+                  (txDelta * 8) /
+                  elapsedSeconds /
+                  1000,
+              });
+            }
+          }
+
+          detailTrafficPrevious.current = {
+            rxBytes: data.rxBytes,
+            txBytes: data.txBytes,
+            timestamp: now,
+          };
+        } catch (error) {
+          console.error(
+            "Live detail traffic gagal.",
+            error
+          );
+        }
+      };
+
+      poll();
+
+      const timer = setInterval(
+        poll,
+        1000
+      );
+
+      return () => {
+        cancelled = true;
+        clearInterval(timer);
+        detailTrafficPrevious.current = null;
+      };
+    }, [selectedSession]);
 
     async function disconnectSession(
     sessionId: string,
@@ -396,7 +577,6 @@ export default function SessionsClient({
 
                 <TableHead>Access</TableHead>
                 <TableHead>Client IP</TableHead>
-                <TableHead>NAS</TableHead>
                 <TableHead>Started</TableHead>
                 <TableHead>Duration</TableHead>
 
@@ -412,7 +592,7 @@ export default function SessionsClient({
               {filteredSessions.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={13}
+                    colSpan={12}
                     className="h-32 text-center text-slate-500"
                   >
                     No sessions found.
@@ -460,11 +640,17 @@ export default function SessionsClient({
                     <TableCell>
                       <div className="text-sm">
                         <div>
-                          ↓ {session.downloadRate ?? 0} kbps
+                          ↓{" "}
+                          {liveBandwidth[session.id]
+                            ? `${liveBandwidth[session.id].downloadKbps.toFixed(1)} kbps`
+                            : "-"}
                         </div>
 
                         <div>
-                          ↑ {session.uploadRate ?? 0} kbps
+                          ↑{" "}
+                          {liveBandwidth[session.id]
+                            ? `${liveBandwidth[session.id].uploadKbps.toFixed(1)} kbps`
+                            : "-"}
                         </div>
                       </div>
                     </TableCell>
@@ -482,18 +668,6 @@ export default function SessionsClient({
                     </TableCell>
 
                     <TableCell>
-                      <div>
-                        <p className="text-slate-900">
-                          {session.nasIdentifier || "-"}
-                        </p>
-
-                        <p className="text-xs text-slate-500">
-                          {session.nasIpAddress || "-"}
-                        </p>
-                      </div>
-                    </TableCell>
-
-                    <TableCell>
                       {formatDateTime(session.startTime)}
                     </TableCell>
 
@@ -502,11 +676,19 @@ export default function SessionsClient({
                     </TableCell>
 
                     <TableCell>
-                      {formatBytes(session.outputBytes)}
+                      {formatBytes(
+                        session.active && session.routerServer === "ovpn"
+                          ? session.routerOsTxBytes
+                          : session.outputBytes
+                      )}
                     </TableCell>
 
                     <TableCell>
-                      {formatBytes(session.inputBytes)}
+                      {formatBytes(
+                        session.active && session.routerServer === "ovpn"
+                          ? session.routerOsRxBytes
+                          : session.inputBytes
+                      )}
                     </TableCell>
                     <TableCell className="text-center">
                       <DropdownMenu>
@@ -615,12 +797,22 @@ export default function SessionsClient({
 
               <div>
                 <strong>Traffic Download</strong><br />
-                {formatBytes(selectedSession.inputBytes)}
+                {formatBytes(
+                  selectedSession.active &&
+                  selectedSession.routerServer === "ovpn"
+                    ? selectedSession.routerOsTxBytes
+                    : selectedSession.inputBytes
+                )}
               </div>
 
               <div>
                 <strong>Traffic Upload</strong><br />
-                {formatBytes(selectedSession.outputBytes)}
+                {formatBytes(
+                  selectedSession.active &&
+                  selectedSession.routerServer === "ovpn"
+                    ? selectedSession.routerOsRxBytes
+                    : selectedSession.outputBytes
+                )}
               </div>
 
               <div>
@@ -663,16 +855,16 @@ export default function SessionsClient({
               </div>
 
               <div>
-                <strong>Download Rate</strong><br />
-                {selectedSession.downloadRate
-                  ? `${selectedSession.downloadRate} kbps`
+                <strong>Traffic RX</strong><br />
+                {detailTraffic
+                  ? `${detailTraffic.rxKbps.toFixed(1)} kbps`
                   : "-"}
               </div>
 
               <div>
-                <strong>Upload Rate</strong><br />
-                {selectedSession.uploadRate
-                  ? `${selectedSession.uploadRate} kbps`
+                <strong>Traffic TX</strong><br />
+                {detailTraffic
+                  ? `${detailTraffic.txKbps.toFixed(1)} kbps`
                   : "-"}
               </div>
 

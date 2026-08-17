@@ -10,94 +10,126 @@ import {
   YAxis,
 } from "recharts";
 
-const data = [
-  { time: "00:00", login: 22 },
-  { time: "02:00", login: 30 },
-  { time: "04:00", login: 28 },
-  { time: "06:00", login: 45 },
-  { time: "08:00", login: 80 },
-  { time: "09:00", login: 65 },
-  { time: "10:00", login: 87 },
-  { time: "12:00", login: 52 },
-  { time: "14:00", login: 40 },
-  { time: "16:00", login: 55 },
-  { time: "18:00", login: 48 },
-  { time: "20:00", login: 35 },
-  { time: "22:00", login: 42 },
-];
+import type { SynologyConnectionActivity } from "@/types/dashboard";
 
-export default function LoginActivityChart() {
+interface Props {
+  connections: SynologyConnectionActivity[];
+}
+
+function formatTime(value: string) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export default function LoginActivityChart({ connections }: Props) {
+  const safeConnections = Array.isArray(connections)
+    ? connections
+    : [];
+
+  const grouped = new Map<string, number>();
+
+  for (const connection of safeConnections) {
+    const label = formatTime(connection.time);
+
+    grouped.set(
+      label,
+      (grouped.get(label) ?? 0) + 1,
+    );
+  }
+
+  const data = Array.from(grouped.entries())
+    .map(([time, login]) => ({
+      time,
+      login,
+    }))
+    .slice(-24);
+
   return (
     <div className="rounded-xl border border-slate-800/40 bg-[#111b2d] p-5">
 
       <div className="mb-5 flex items-center justify-between">
 
-        <h2 className="text-lg font-semibold text-white">
-          Login Activity
-        </h2>
+        <div>
+          <h2 className="text-lg font-semibold text-white">
+            Login Activity
+          </h2>
 
-        <div className="flex gap-2">
+          <p className="mt-1 text-xs text-slate-400">
+            Synology connection activity
+          </p>
+        </div>
 
-          <button className="rounded bg-blue-700 px-3 py-1 text-xs">
-            Today
-          </button>
-
-          <button className="rounded bg-slate-800 px-3 py-1 text-xs text-slate-300">
-            7 Days
-          </button>
-
-          <button className="rounded bg-slate-800 px-3 py-1 text-xs text-slate-300">
-            30 Days
-          </button>
-
+        <div className="rounded bg-blue-900/40 px-3 py-1 text-xs text-blue-300">
+          {safeConnections.length} Connections
         </div>
 
       </div>
 
-      <div className="h-[300px]">
+      {data.length === 0 ? (
+        <div className="flex h-[300px] items-center justify-center text-sm text-slate-500">
+          No Synology login activity available
+        </div>
+      ) : (
+        <div className="h-[300px]">
 
-        <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%">
 
-          <LineChart data={data}>
+            <LineChart data={data}>
 
-            <CartesianGrid
-              stroke="#263447"
-              strokeDasharray="4 4"
-            />
+              <CartesianGrid
+                stroke="#263447"
+                strokeDasharray="4 4"
+              />
 
-            <XAxis
-              dataKey="time"
-              stroke="#64748b"
-            />
+              <XAxis
+                dataKey="time"
+                stroke="#64748b"
+              />
 
-            <YAxis
-              stroke="#64748b"
-            />
+              <YAxis
+                stroke="#64748b"
+                allowDecimals={false}
+              />
 
-            <Tooltip
-              contentStyle={{
-                background: "#0f172a",
-                border: "1px solid #334155",
-                borderRadius: "10px",
-              }}
-            />
+              <Tooltip
+                contentStyle={{
+                  background: "#0f172a",
+                  border: "1px solid #334155",
+                  borderRadius: "10px",
+                }}
+                labelStyle={{
+                  color: "#cbd5e1",
+                }}
+              />
 
-            <Line
-              type="monotone"
-              dataKey="login"
-              stroke="#60a5fa"
-              strokeWidth={3}
-              dot={false}
-              activeDot={{
-                r: 6,
-              }}
-            />
+              <Line
+                type="monotone"
+                dataKey="login"
+                name="Connections"
+                stroke="#60a5fa"
+                strokeWidth={3}
+                dot={false}
+                activeDot={{
+                  r: 6,
+                }}
+              />
 
-          </LineChart>
+            </LineChart>
 
-        </ResponsiveContainer>
+          </ResponsiveContainer>
 
-      </div>
+        </div>
+      )}
 
     </div>
   );

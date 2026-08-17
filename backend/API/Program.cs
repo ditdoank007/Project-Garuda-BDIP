@@ -29,11 +29,14 @@ using BDIP.Infrastructure.Roles;
 using BDIP.Application.Locations;
 using BDIP.Infrastructure.Locations;
 using BDIP.Application.NAP;
+using BDIP.Application.Synology;
 using BDIP.Infrastructure.NAP;
 using Microsoft.AspNetCore.Routing;
 using BDIP.Application.Provisioning;
 using BDIP.Infrastructure.Provisioning;
 using BDIP.Infrastructure.RouterOS;
+using BDIP.Infrastructure.Synology;
+using BDIP.Infrastructure.Monitoring;
 using BDIP.API.Services.Sessions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -77,6 +80,17 @@ builder.Services.AddSingleton<IBdipSessionService>(
 
 builder.Services.AddScoped<IUnitService, PostgreSqlUnitService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddHttpClient<ISynologyMonitoringService, SynologyMonitoringService>()
+    .ConfigurePrimaryHttpMessageHandler(() =>
+        new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        });
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<INodeExporterService, NodeExporterService>();
+builder.Services.Configure<NodeExporterOptions>(
+    builder.Configuration.GetSection("NodeExporter"));
 builder.Services.AddScoped<ILdapDashboardRepository, LdapDashboardRepository>();
 
 builder.Services.AddScoped<IGroupService, GroupService>();
@@ -104,8 +118,16 @@ builder.Services.Configure<ApplicationDbOptions>(
 builder.Services.Configure<RadiusDbOptions>(
     builder.Configuration.GetSection("RadiusDb"));
 
+builder.Services.Configure<SynologySnmpOptions>(
+    builder.Configuration.GetSection("SynologySnmp"));
+
+builder.Services.AddScoped<SynologySnmpService>();
+
 builder.Services.Configure<RouterOsOptions>(
     builder.Configuration.GetSection("RouterOs"));
+
+builder.Services.Configure<RouterOsOvpnOptions>(
+    builder.Configuration.GetSection("RouterOsOvpn"));
 
 builder.Services.AddScoped<ISessionService, PostgreSqlSessionService>();
 builder.Services.AddScoped<IRoleService, LdapRoleService>();
@@ -118,6 +140,7 @@ builder.Services.AddScoped<ILocationService, PostgreSqlLocationService>();
 builder.Services.AddScoped<IPolicyService, PostgreSqlPolicyService>();
 builder.Services.AddScoped<IApplicationService, PostgreSqlApplicationService>();
 builder.Services.AddScoped<INapSynchronizationService, NapSynchronizationService>();
+builder.Services.AddScoped<INapLdapGroupSyncService, NapLdapGroupSyncService>();
 
 builder.Services.AddScoped<
     IRadiusProvisioningService,

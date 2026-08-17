@@ -13,4 +13,8 @@ public sealed class RouterOsActiveSession
     public string Server { get; set; } = "";
 
     public string Uptime { get; set; } = "";
+
+    public long BytesIn { get; set; }
+
+    public long BytesOut { get; set; }
 }

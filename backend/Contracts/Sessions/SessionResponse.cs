@@ -50,6 +50,12 @@ public class SessionResponse
 
     public bool IsRouterActive { get; set; }
 
+    public string RouterOsInterface { get; set; } = "";
+
+    public long RouterOsRxBytes { get; set; }
+
+    public long RouterOsTxBytes { get; set; }
+
     // ---------- NAP Enrichment ----------
 
     public string PolicyCode { get; set; } = "";
