@@ -9,7 +9,7 @@ export default function Logo() {
 
   return (
     <Link
-      href="/dashboard"
+      href="/"
       className="flex items-center gap-3 text-white"
       aria-label="Basarnas Digital Identity Platform"
     >

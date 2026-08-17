@@ -2,6 +2,9 @@ import { CalendarDays, LogIn, Moon } from "lucide-react";
 import Link from "next/link";
 import KpiCard from "./KpiCard";
 import GaugeCard from "@/components/dashboard/GaugeCard";
+import SynologyStorageCard from "@/components/dashboard/SynologyStorageCard";
+import SynologyHardwareCard from "@/components/dashboard/SynologyHardwareCard";
+import SynologySystemHealthCard from "@/components/dashboard/SynologySystemHealthCard";
 import LoginActivityChart from "@/components/dashboard/LoginActivityChart";
 import ActiveSessionsChart from "@/components/dashboard/ActiveSessionsChart";
 import {
@@ -16,10 +19,57 @@ import {
 
 import { Users, Wifi, RadioTower, Shield, Server, Boxes } from "lucide-react";
 import { getDashboard } from "@/services/dashboard.service";
+import { getMonitoringServers } from "@/services/monitoring.service";
+import ServerMonitoringCard from "./ServerMonitoringCard";
+import InfrastructureHealthCard from "./InfrastructureHealthCard";
 
 export default async function LandingPage() {
 
   const dashboard = await getDashboard();
+  const monitoring = await getMonitoringServers();
+
+  const serverMetrics = monitoring.data;
+
+  const serverBdIp =
+    serverMetrics.find(
+      (server) => server.name === "SERVER-BDIP",
+    ) ?? serverMetrics[0];
+
+  const databaseServer =
+    serverMetrics.find(
+      (server) => server.name === "SERVER-Garuda-DB",
+    ) ?? serverMetrics[1];
+
+  const infrastructureHealth = [
+    {
+      label: "SERVER-BDIP",
+      status: serverBdIp?.isOnline ? "ONLINE" : "OFFLINE",
+      healthy: serverBdIp?.isOnline ?? false,
+    },
+    {
+      label: "BDIP DATABASE",
+      status: databaseServer?.isOnline ? "ONLINE" : "OFFLINE",
+      healthy: databaseServer?.isOnline ?? false,
+    },
+    {
+      label: "OPENLDAP",
+      status: dashboard.stats.ldap,
+      healthy: dashboard.stats.ldap === "Healthy",
+    },
+    {
+      label: "SYNOLOGY",
+      status: dashboard.synology.online ? "ONLINE" : "OFFLINE",
+      healthy: dashboard.synology.online,
+    },
+  ];
+
+  const monitoringLastUpdated =
+    serverMetrics
+      .map((server) => server.lastUpdated)
+      .filter(Boolean)
+      .sort()
+      .at(-1);
+
   return (
     <main className="min-h-screen bg-[#08111f] text-white">
       {/* Header */}
@@ -38,7 +88,7 @@ export default async function LandingPage() {
           <div className="flex items-center gap-3">
             <button className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2">
               <CalendarDays className="h-4 w-4" />
-              Today (31 July 2026)
+              {`Today (${new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "long", year: "numeric" }).format(new Date())})`}
             </button>
 
             <Link
@@ -96,10 +146,10 @@ export default async function LandingPage() {
 
           <KpiCard
             title="NAS Online"
-            value={dashboard.stats.nasOnline.toLocaleString()}
-            subtitle="RouterOS Connected"
+            value={dashboard.synology.online ? "ONLINE" : "OFFLINE"}
+            subtitle={`${dashboard.synology.model} • ${dashboard.synology.usedPercent}% Used`}
             icon={Server}
-            color="bg-sky-600"
+            color={dashboard.synology.online ? "bg-sky-600" : "bg-red-600"}
           />
 
           <KpiCard
@@ -124,7 +174,7 @@ export default async function LandingPage() {
 
           <GaugeCard
             title="Hotspot Usage"
-            value={58}
+            value={dashboard.stats.hotspotSessions}
             max={100}
             color="#f59e0b"
             suffix="%"
@@ -133,7 +183,7 @@ export default async function LandingPage() {
 
           <GaugeCard
             title="OVPN Usage"
-            value={42}
+            value={dashboard.stats.vpnSessions}
             max={100}
             color="#a855f7"
             suffix="%"
@@ -141,26 +191,64 @@ export default async function LandingPage() {
           />
 
           <GaugeCard
-            title="NAS Online"
-            value={97}
+            title="NAS Storage"
+            value={dashboard.synology.usedPercent}
             max={100}
             color="#3b82f6"
             suffix="%"
-            subtitle="29 of 30 Devices"
+            subtitle={`${dashboard.synology.volumeName} • ${dashboard.synology.status}`}
           />
 
           <GaugeCard
             title="Policies"
-            value={45}
+            value={dashboard.stats.totalPolicies}
             max={100}
             color="#06b6d4"
             subtitle="Configured"
           />
         </div>
-        <div className="mt-6 grid gap-6 xl:grid-cols-2">
-          <LoginActivityChart />
+        <div className="mt-6 grid gap-6 xl:grid-cols-3">
+          {serverBdIp && (
+            <ServerMonitoringCard
+              server={serverBdIp}
+              title="SERVER-BDIP"
+              subtitle="BDIP Application Server"
+            />
+          )}
 
-          <ActiveSessionsChart />
+          {databaseServer && (
+            <ServerMonitoringCard
+              server={databaseServer}
+              title="BDIP DATABASE"
+              subtitle="PostgreSQL Database Server"
+            />
+          )}
+
+          <InfrastructureHealthCard
+            items={infrastructureHealth}
+            lastUpdated={
+              monitoringLastUpdated
+                ? new Date(monitoringLastUpdated).toLocaleString(
+                    "en-GB",
+                  )
+                : undefined
+            }
+          />
+        </div>
+<div className="mt-6 grid gap-6 xl:grid-cols-2">
+          <SynologyStorageCard
+            synology={dashboard.synology}
+          />
+
+          <SynologyHardwareCard
+            hardware={dashboard.synology.hardware}
+          />
+        </div>
+
+        <div className="mt-6">
+          <SynologySystemHealthCard
+            health={dashboard.synology.systemHealth}
+          />
         </div>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-4">
@@ -180,6 +268,8 @@ export default async function LandingPage() {
 
           <TodayStatisticsCard />
         </div>
+
+
         
       </div>
 

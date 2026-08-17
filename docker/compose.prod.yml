@@ -38,10 +38,12 @@ services:
     image: osixia/openldap:1.5.0
     restart: unless-stopped
 
+    env_file:
+      - openldap.env
+
     environment:
       LDAP_ORGANISATION: "Basarnas Surabaya"
       LDAP_DOMAIN: "basarnas.go.id"
-      LDAP_ADMIN_PASSWORD: "Carabiner#031"
 
     ports:
       - "389:389"
@@ -59,6 +61,7 @@ services:
     container_name: bdip-backend
     env_file:
       - backend-db.env
+      - ../backend-synology.env
     build:
       context: ..
       dockerfile: docker/backend/Dockerfile.prod

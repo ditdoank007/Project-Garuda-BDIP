@@ -102,3 +102,16 @@ docker/backend-db.env
 
 **/portainer.db
 **/*.key
+
+# BDIP Synology API secret
+backend-synology.env
+
+/archive/
+/Program.cs
+
+# BDIP Patch Backups
+*.bak
+*.bak.*
+
+# BDIP OpenLDAP runtime secret
+docker/openldap.env
