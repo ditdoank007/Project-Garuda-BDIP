@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { login } from "@/services/auth.service";
 import { toast } from "sonner";
 
@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const ssoRedirect = searchParams.get("sso_redirect");
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -34,6 +36,13 @@ export default function LoginPage() {
       );
 
       toast.success("Login berhasil.");
+
+      if (ssoRedirect) {
+        window.location.href =
+          `/api/auth/sso/start?redirectUri=${encodeURIComponent(ssoRedirect)}`;
+        return;
+      }
+
       router.replace("/dashboard");
       router.refresh();
     } catch (error) {

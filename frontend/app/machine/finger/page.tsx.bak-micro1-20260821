@@ -1,0 +1,53 @@
+import AppShell from "@/components/layout/AppShell";
+
+export default function FingerMachinePage() {
+  return (
+    <AppShell>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">
+            Mesin Finger
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Management dan monitoring HRIS Finger Controller
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Controller Status
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Koneksi ke HRIS-Controller CT129 belum dikonfigurasi.
+              </p>
+            </div>
+
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
+              NOT CONNECTED
+            </span>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[
+            ["Daftar Mesin", "Master data mesin finger"],
+            ["Penarikan Data", "Penarikan attendance dari mesin"],
+            ["Jadwal", "Jadwal penarikan dan CLEAR"],
+            ["Sinkronisasi Waktu", "Sinkronisasi waktu mesin"],
+            ["Log / Monitoring", "Monitoring aktivitas controller"],
+          ].map(([title, description]) => (
+            <div
+              key={title}
+              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
+              <h3 className="font-semibold text-slate-900">{title}</h3>
+              <p className="mt-1 text-sm text-slate-500">{description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </AppShell>
+  );
+}

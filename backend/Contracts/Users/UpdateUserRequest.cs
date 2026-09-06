@@ -2,6 +2,10 @@ namespace BDIP.Contracts.Users.Requests;
 
 public class UpdateUserRequest
 {
+    public string Nip { get; set; } = "";
+
+    public string FingerId { get; set; } = "";
+
     public string FullName { get; set; } = "";
 
     public string Email { get; set; } = "";

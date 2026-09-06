@@ -53,6 +53,30 @@ export default function UserForm({
       </div>
 
       <div className="space-y-2">
+        <Label>NIP</Label>
+        <Input
+          value={user.nip}
+          readOnly={readOnly}
+          placeholder="NIP (untuk non-PNS gunakan FingerID)"
+          onChange={(e) =>
+            updateField("nip", e.target.value)
+          }
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>FingerID</Label>
+        <Input
+          value={user.fingerId}
+          readOnly={readOnly}
+          placeholder="FingerID"
+          onChange={(e) =>
+            updateField("fingerId", e.target.value)
+          }
+        />
+      </div>
+
+      <div className="space-y-2">
         <Label>Full Name</Label>
         <Input
           value={user.fullName}

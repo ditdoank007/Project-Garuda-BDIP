@@ -27,7 +27,17 @@ using BDIP.Application.Sessions;
 using BDIP.Application.Roles;
 using BDIP.Infrastructure.Roles;
 using BDIP.Application.Locations;
+using BDIP.Application.FingerMachines;
+using BDIP.Application.FingerMachineGlobalPolicy;
+using BDIP.Application.FingerMachinePolicies;
+using BDIP.Application.FingerMachineRuntime;
+using BDIP.Application.FingerMachinePullSchedule;
 using BDIP.Infrastructure.Locations;
+using BDIP.Infrastructure.FingerMachines;
+using BDIP.Infrastructure.FingerMachinePolicies;
+using BDIP.Infrastructure.FingerMachineRuntime;
+using BDIP.Infrastructure.FingerMachinePullSchedule;
+using BDIP.Infrastructure.FingerMachineGlobalPolicy;
 using BDIP.Application.NAP;
 using BDIP.Application.Synology;
 using BDIP.Infrastructure.NAP;
@@ -77,6 +87,8 @@ var bdipSessionSecret =
 
 builder.Services.AddSingleton<IBdipSessionService>(
     new BdipSessionService(bdipSessionSecret));
+
+builder.Services.AddSingleton<ISsoAuthorizationCodeService, SsoAuthorizationCodeService>();
 
 builder.Services.AddScoped<IUnitService, PostgreSqlUnitService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
@@ -132,6 +144,11 @@ builder.Services.Configure<RouterOsOvpnOptions>(
 builder.Services.AddScoped<ISessionService, PostgreSqlSessionService>();
 builder.Services.AddScoped<IRoleService, LdapRoleService>();
 builder.Services.AddScoped<ILocationService, PostgreSqlLocationService>();
+builder.Services.AddScoped<IFingerMachineService, PostgreSqlFingerMachineService>();
+builder.Services.AddScoped<IFingerMachinePolicyService, PostgreSqlFingerMachinePolicyService>();
+builder.Services.AddScoped<IFingerMachineRuntimeService, PostgreSqlFingerMachineRuntimeService>();
+builder.Services.AddScoped<IFingerMachineGlobalPolicyService, PostgreSqlFingerMachineGlobalPolicyService>();
+builder.Services.AddScoped<IFingerMachinePullScheduleService, PostgreSqlFingerMachinePullScheduleService>();
 builder.Services.AddScoped<IPolicyService, PostgreSqlPolicyService>();
 builder.Services.AddScoped<IUserNapService, PostgreSqlUserNapService>();
 builder.Services.AddScoped<ISessionService, PostgreSqlSessionService>();

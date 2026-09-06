@@ -1,6 +1,8 @@
 export interface User {
   uid: string;
   username: string;
+  nip: string;
+  fingerId: string;
   fullName: string;
   email: string;
   unit: string;
@@ -12,6 +14,8 @@ export interface User {
 
 export interface UserFormData {
   username: string;
+  nip: string;
+  fingerId: string;
   fullName: string;
   email: string;
   unit: string;

@@ -8,7 +8,7 @@ import type {
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ??
-  "http://192.168.100.120:8080/api";
+  "/api";
 
 interface ApiResponse<T> {
   success: boolean;

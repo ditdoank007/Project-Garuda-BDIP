@@ -26,6 +26,8 @@ export async function createUser(
 ) {
   return apiPost("/users", {
     username: user.username,
+    nip: user.nip,
+    fingerId: user.fingerId,
     fullName: user.fullName,
     email: user.email,
     unit: user.unit,

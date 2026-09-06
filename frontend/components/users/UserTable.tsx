@@ -154,6 +154,8 @@ export default function UserTable({
           <TableHeader>
             <TableRow>
               <TableHead>Username</TableHead>
+              <TableHead>NIP</TableHead>
+              <TableHead>FingerID</TableHead>
               <TableHead>Full Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Unit</TableHead>
@@ -169,7 +171,7 @@ export default function UserTable({
             {users.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={9}
                   className="h-24 text-center text-muted-foreground"
                 >
                   No users found.
@@ -184,6 +186,14 @@ export default function UserTable({
                   <TableRow key={user.uid}>
                     <TableCell className="font-medium">
                       {user.username}
+                    </TableCell>
+
+                    <TableCell>
+                      {user.nip || "-"}
+                    </TableCell>
+
+                    <TableCell>
+                      {user.fingerId || "-"}
                     </TableCell>
 
                     <TableCell>

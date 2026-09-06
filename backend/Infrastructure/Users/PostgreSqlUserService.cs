@@ -55,6 +55,8 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
                 """
                 SELECT
                     u.username,
+                    u.nip,
+                    u.finger_id,
                     u.full_name,
                     u.email,
                     un.name AS unit,
@@ -74,6 +76,41 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
 
         return result;
     }
+
+    public async Task<UserResponse?> GetUserByUsernameAsync(
+        string username)
+    {
+        await using var dataSource = CreateDataSource();
+
+        await using var command =
+            dataSource.CreateCommand(
+                """
+                SELECT
+                    u.username,
+                    u.nip,
+                    u.finger_id,
+                    u.full_name,
+                    u.email,
+                    un.name AS unit,
+                    u.enabled
+                FROM public.users AS u
+                LEFT JOIN public.units AS un
+                    ON u.unit_id = un.id
+                WHERE LOWER(u.username) = LOWER(@username)
+                LIMIT 1;
+                """);
+
+        command.Parameters.AddWithValue("username", username);
+
+        await using var reader =
+            await command.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync())
+            return null;
+
+        return Map(reader);
+    }
+
 
     public async Task<int> CountUsersAsync()
     {
@@ -123,6 +160,8 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
                 INSERT INTO public.users
                 (
                     username,
+                    nip,
+                    finger_id,
                     full_name,
                     email,
                     unit_id,
@@ -131,6 +170,8 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
                 VALUES
                 (
                     @username,
+                    @nip,
+                    @fingerid,
                     @fullname,
                     @email,
                     @unitid,
@@ -141,6 +182,18 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
         command.Parameters.AddWithValue(
             "username",
             request.Username);
+
+        command.Parameters.AddWithValue(
+            "nip",
+            string.IsNullOrWhiteSpace(request.Nip)
+                ? DBNull.Value
+                : request.Nip);
+
+        command.Parameters.AddWithValue(
+            "fingerid",
+            string.IsNullOrWhiteSpace(request.FingerId)
+                ? DBNull.Value
+                : request.FingerId);
 
         command.Parameters.AddWithValue(
             "fullname",
@@ -189,12 +242,26 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
                 """
                 UPDATE public.users
                 SET
+                    nip       = @nip,
+                    finger_id = @fingerid,
                     full_name = @fullname,
                     email     = @email,
                     unit_id   = @unitid,
                     enabled   = @enabled
                 WHERE LOWER(username)=LOWER(@username);
                 """);
+
+        command.Parameters.AddWithValue(
+            "nip",
+            string.IsNullOrWhiteSpace(request.Nip)
+                ? DBNull.Value
+                : request.Nip);
+
+        command.Parameters.AddWithValue(
+            "fingerid",
+            string.IsNullOrWhiteSpace(request.FingerId)
+                ? DBNull.Value
+                : request.FingerId);
 
         command.Parameters.AddWithValue(
             "fullname",
@@ -356,14 +423,20 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
         {
             Uid = reader.GetString(0),
             Username = reader.GetString(0),
-            FullName = reader.GetString(1),
-            Email = reader.IsDBNull(2)
-            ? string.Empty
-            : reader.GetString(2),
-            Unit = reader.IsDBNull(3)
-            ? string.Empty
-            : reader.GetString(3),
-            Enabled = reader.GetBoolean(4)
+            Nip = reader.IsDBNull(1)
+                ? string.Empty
+                : reader.GetString(1),
+            FingerId = reader.IsDBNull(2)
+                ? string.Empty
+                : reader.GetString(2),
+            FullName = reader.GetString(3),
+            Email = reader.IsDBNull(4)
+                ? string.Empty
+                : reader.GetString(4),
+            Unit = reader.IsDBNull(5)
+                ? string.Empty
+                : reader.GetString(5),
+            Enabled = reader.GetBoolean(6)
         };
     }
 }

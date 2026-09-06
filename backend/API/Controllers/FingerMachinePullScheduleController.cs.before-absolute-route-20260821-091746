@@ -1,0 +1,72 @@
+using BDIP.Application.FingerMachinePullSchedule;
+using BDIP.Contracts.FingerMachinePullSchedule;
+
+using Microsoft.AspNetCore.Mvc;
+
+namespace BDIP.API.Controllers;
+
+[ApiController]
+[Route("api/finger-machines/pull-schedule")]
+public sealed class FingerMachinePullScheduleController
+    : ControllerBase
+{
+    private readonly IFingerMachinePullScheduleService _service;
+
+
+    public FingerMachinePullScheduleController(
+        IFingerMachinePullScheduleService service)
+    {
+        _service = service;
+    }
+
+
+    [HttpGet]
+    public async Task<IActionResult> GetAsync()
+    {
+        try
+        {
+            var result =
+                await _service.GetAllAsync();
+
+            return Ok(new
+            {
+                success = true,
+                data = result
+            });
+        }
+        catch (Exception exception)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = exception.Message
+            });
+        }
+    }
+
+
+    [HttpPut]
+    public async Task<IActionResult> UpdateAsync(
+        [FromBody] UpdateFingerMachinePullScheduleRequest request)
+    {
+        try
+        {
+            var result =
+                await _service.UpdateAsync(request);
+
+            return Ok(new
+            {
+                success = true,
+                data = result
+            });
+        }
+        catch (Exception exception)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = exception.Message
+            });
+        }
+    }
+}

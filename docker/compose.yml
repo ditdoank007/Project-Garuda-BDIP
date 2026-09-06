@@ -13,8 +13,8 @@ services:
       - ../frontend:/app
 
     environment:
-      NEXT_PUBLIC_API_URL: http://192.168.100.120:8080/api
-      BDIP_INTERNAL_API_URL: http://192.168.100.120:8080/api
+      NEXT_PUBLIC_API_URL: /api
+      BDIP_INTERNAL_API_URL: http://backend:8080/api
 
     ports:
       - "3000:3000"

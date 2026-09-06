@@ -8,5 +8,9 @@ public class LoginResponse
 
     public string Email { get; set; } = "";
 
+    public string Nip { get; set; } = "";
+
+    public string FingerId { get; set; } = "";
+
     public string Role { get; set; } = "User";
 }

@@ -1,3 +1,4 @@
+using BDIP.Application.Users;
 using System.DirectoryServices.Protocols;
 using System.Net;
 
@@ -12,13 +13,15 @@ public class LdapAuthService : IAuthService
 {
     private readonly ILdapConnectionFactory _ldap;
     private readonly LdapOptions _options;
+    private readonly IUserService _userService;
 
     public LdapAuthService(
         ILdapConnectionFactory ldap,
-        IOptions<LdapOptions> options)
+        IOptions<LdapOptions> options, IUserService userService)
     {
         _ldap = ldap;
         _options = options.Value;
+        _userService = userService;
     }
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
@@ -46,6 +49,8 @@ public class LdapAuthService : IAuthService
                 "uid",
                 "cn",
                 "mail",
+                "nip",
+                "fingerid",
                 "shadowExpire",
                 "memberOf"
             });
@@ -151,20 +156,111 @@ public class LdapAuthService : IAuthService
                 "Access denied. Only BDIP Administrators are allowed to sign in.");
         }
 
-        var role = "Administrator";
+        var user = await _userService.GetUserByUsernameAsync(username);
+
 
         return new LoginResponse
         {
-            Username =
-                entry.Attributes["uid"]?[0]?.ToString() ?? username,
+            Username = user?.Username ?? username,
+            FullName = user?.FullName ?? entry.Attributes["cn"]?[0]?.ToString() ?? username,
+            Email = user?.Email ?? entry.Attributes["mail"]?[0]?.ToString() ?? "",
+            Nip = user?.Nip ?? "",
+            FingerId = user?.FingerId ?? "",
+            Role = "Administrator"
+        };
+    }
 
-            FullName =
-                entry.Attributes["cn"]?[0]?.ToString() ?? username,
+    public async Task<LoginResponse> VerifyCredentialsAsync(
+        LoginRequest request)
+    {
+        await Task.CompletedTask;
 
-            Email =
-                entry.Attributes["mail"]?[0]?.ToString() ?? "",
+        if (string.IsNullOrWhiteSpace(request.Username) ||
+            string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new UnauthorizedAccessException(
+                "Username and password are required.");
+        }
 
-            Role = role
+        var username = request.Username.Trim();
+
+        using var adminConnection = _ldap.Create();
+
+        var searchRequest = new SearchRequest(
+            _options.PeopleDn,
+            $"(uid={EscapeFilterValue(username)})",
+            SearchScope.OneLevel,
+            new[]
+            {
+                "uid",
+                "cn",
+                "mail",
+                "nip",
+                "fingerid",
+                "shadowExpire"
+            });
+
+        var searchResponse =
+            (SearchResponse)adminConnection.SendRequest(searchRequest);
+
+        if (searchResponse.Entries.Count != 1)
+        {
+            throw new UnauthorizedAccessException(
+                "Invalid username or password.");
+        }
+
+        var entry = searchResponse.Entries[0];
+
+        var shadowExpire =
+            entry.Attributes["shadowExpire"]?[0]?.ToString();
+
+        if (!string.IsNullOrWhiteSpace(shadowExpire) &&
+            shadowExpire != "-1")
+        {
+            throw new UnauthorizedAccessException(
+                "This account is disabled.");
+        }
+
+        var userDn = entry.DistinguishedName;
+
+        try
+        {
+            var identifier = new LdapDirectoryIdentifier(
+                _options.Host,
+                _options.Port);
+
+            using var userConnection = new LdapConnection(identifier)
+            {
+                AuthType = AuthType.Basic,
+                Credential = new NetworkCredential(
+                    userDn,
+                    request.Password)
+            };
+
+            userConnection.SessionOptions.ProtocolVersion = 3;
+            userConnection.SessionOptions.SecureSocketLayer =
+                _options.UseSsl;
+            userConnection.Timeout = TimeSpan.FromSeconds(10);
+
+            userConnection.Bind();
+        }
+        catch (LdapException)
+        {
+            throw new UnauthorizedAccessException(
+                "Invalid username or password.");
+        }
+
+
+        var user = await _userService.GetUserByUsernameAsync(username);
+
+        return new LoginResponse
+        {
+            Username = user?.Username ?? username,
+            FullName = user?.FullName ?? entry.Attributes["cn"]?[0]?.ToString() ?? username,
+            Email = user?.Email ?? entry.Attributes["mail"]?[0]?.ToString() ?? "",
+            Nip = user?.Nip ?? "",
+            FingerId = user?.FingerId ?? "",
+            Role = "User"
         };
     }
 

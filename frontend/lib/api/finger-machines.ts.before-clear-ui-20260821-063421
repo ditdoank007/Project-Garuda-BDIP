@@ -1,0 +1,41 @@
+import axios from "axios";
+
+import type {
+  FingerMachineFormData,
+} from "@/types/finger-machine";
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL;
+
+export async function createFingerMachine(
+  machine: FingerMachineFormData,
+) {
+  const response = await axios.post(
+    `${API_URL}/finger-machines`,
+    machine,
+  );
+
+  return response.data;
+}
+
+export async function updateFingerMachine(
+  code: string,
+  machine: FingerMachineFormData,
+) {
+  const response = await axios.put(
+    `${API_URL}/finger-machines/${encodeURIComponent(code)}`,
+    machine,
+  );
+
+  return response.data;
+}
+
+export async function deleteFingerMachine(
+  code: string,
+) {
+  const response = await axios.delete(
+    `${API_URL}/finger-machines/${encodeURIComponent(code)}`,
+  );
+
+  return response.data;
+}

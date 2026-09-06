@@ -1,0 +1,759 @@
+using BDIP.Application.FingerMachineRuntime;
+using BDIP.Contracts.FingerMachineRuntime;
+using BDIP.Persistence.PostgreSQL;
+
+using Microsoft.Extensions.Options;
+
+using System.Net.Http.Json;
+
+using Npgsql;
+
+namespace BDIP.Infrastructure.FingerMachineRuntime;
+
+public sealed class PostgreSqlFingerMachineRuntimeService
+    : IFingerMachineRuntimeService
+{
+    private readonly ApplicationDbOptions _options;
+
+    public PostgreSqlFingerMachineRuntimeService(
+        IOptions<ApplicationDbOptions> options)
+    {
+        _options = options.Value;
+    }
+
+    private NpgsqlDataSource CreateDataSource()
+    {
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = _options.Host,
+            Port = _options.Port,
+            Database = _options.Database,
+            Username = _options.Username,
+            Password = _options.Password,
+            SslMode = SslMode.Disable,
+            Timeout = 10,
+            CommandTimeout = 15,
+            ApplicationName = "BDIP Finger Machine Runtime"
+        };
+
+        return NpgsqlDataSource.Create(
+            builder.ConnectionString);
+    }
+
+    private async Task<Guid> GetMachineIdAsync(
+        NpgsqlDataSource dataSource,
+        string machineCode)
+    {
+        await using var command =
+            dataSource.CreateCommand(
+                """
+                SELECT id
+                FROM public.finger_machines
+                WHERE LOWER(code) = LOWER(@code)
+                  AND is_active = TRUE
+                LIMIT 1;
+                """
+            );
+
+        command.Parameters.AddWithValue(
+            "code",
+            machineCode.Trim());
+
+        var result =
+            await command.ExecuteScalarAsync();
+
+        if (result is null)
+        {
+            throw new KeyNotFoundException(
+                $"Active finger machine '{machineCode}' was not found.");
+        }
+
+        return (Guid)result;
+    }
+
+    public async Task<IEnumerable<FingerMachineRuntimeResponse>>
+        GetAllAsync()
+    {
+        await using var dataSource =
+            CreateDataSource();
+
+        await using var command =
+            dataSource.CreateCommand(
+                """
+                SELECT
+                    fm.code,
+                    fm.name,
+                    COALESCE(fmr.is_online, FALSE),
+                    fmr.last_seen_at,
+                    fmr.last_pull_at,
+                    fmr.last_time_sync_at,
+                    fmr.last_clear_at,
+                    fmr.last_error
+                FROM public.finger_machines fm
+                LEFT JOIN public.finger_machine_runtime fmr
+                    ON fmr.finger_machine_id = fm.id
+                WHERE fm.is_active = TRUE
+                ORDER BY fm.code;
+                """
+            );
+
+        await using var reader =
+            await command.ExecuteReaderAsync();
+
+        var result =
+            new List<FingerMachineRuntimeResponse>();
+
+        while (await reader.ReadAsync())
+        {
+            result.Add(
+                new FingerMachineRuntimeResponse
+                {
+                    MachineCode =
+                        reader.GetString(0),
+
+                    MachineName =
+                        reader.GetString(1),
+
+                    IsOnline =
+                        reader.GetBoolean(2),
+
+                    LastSeenAt =
+                        reader.IsDBNull(3)
+                            ? null
+                            : reader.GetDateTime(3),
+
+                    LastPullAt =
+                        reader.IsDBNull(4)
+                            ? null
+                            : reader.GetDateTime(4),
+
+                    LastTimeSyncAt =
+                        reader.IsDBNull(5)
+                            ? null
+                            : reader.GetDateTime(5),
+
+                    LastClearAt =
+                        reader.IsDBNull(6)
+                            ? null
+                            : reader.GetDateTime(6),
+
+                    LastError =
+                        reader.IsDBNull(7)
+                            ? null
+                            : reader.GetString(7)
+                });
+        }
+
+        return result;
+    }
+
+
+    public async Task RecordRuntimeAsync(
+        string machineCode,
+        FingerMachineRuntimeRequest request)
+    {
+        await using var dataSource =
+            CreateDataSource();
+
+        var machineId =
+            await GetMachineIdAsync(
+                dataSource,
+                machineCode);
+
+        var observedAt =
+            request.ObservedAt ?? DateTime.UtcNow;
+
+        await using var command =
+            dataSource.CreateCommand(
+                """
+                INSERT INTO public.finger_machine_runtime
+                (
+                    finger_machine_id,
+                    is_online,
+                    serial_number,
+                    device_name,
+                    last_seen_at,
+                    updated_at
+                )
+                VALUES
+                (
+                    @machine_id,
+                    @is_online,
+                    @serial_number,
+                    @device_name,
+                    @observed_at,
+                    NOW()
+                )
+                ON CONFLICT (finger_machine_id)
+                DO UPDATE SET
+                    is_online = EXCLUDED.is_online,
+                    serial_number = COALESCE(
+                        EXCLUDED.serial_number,
+                        public.finger_machine_runtime.serial_number
+                    ),
+                    device_name = COALESCE(
+                        EXCLUDED.device_name,
+                        public.finger_machine_runtime.device_name
+                    ),
+                    last_seen_at = EXCLUDED.last_seen_at,
+                    updated_at = NOW();
+                """
+            );
+
+        command.Parameters.AddWithValue(
+            "machine_id",
+            machineId);
+
+        command.Parameters.AddWithValue(
+            "is_online",
+            request.IsOnline);
+
+        command.Parameters.AddWithValue(
+            "serial_number",
+            (object?)request.SerialNumber ?? DBNull.Value);
+
+        command.Parameters.AddWithValue(
+            "device_name",
+            (object?)request.DeviceName ?? DBNull.Value);
+
+        command.Parameters.AddWithValue(
+            "observed_at",
+            observedAt);
+
+        await command.ExecuteNonQueryAsync();
+    }
+
+    public async Task RecordPullResultAsync(
+        string machineCode,
+        FingerMachinePullResultRequest request)
+    {
+        await using var dataSource =
+            CreateDataSource();
+
+        var machineId =
+            await GetMachineIdAsync(
+                dataSource,
+                machineCode);
+
+        var executedAt =
+            request.ExecutedAt ?? DateTime.UtcNow;
+
+        await using var connection =
+            await dataSource.OpenConnectionAsync();
+
+        await using var transaction =
+            await connection.BeginTransactionAsync();
+
+        await using var command =
+            connection.CreateCommand();
+
+        command.CommandText = """
+                    INSERT INTO public.finger_machine_pull_logs
+                    (
+                        id,
+                        finger_machine_id,
+                        executed_at,
+                        read_count,
+                        inserted_count,
+                        skipped_count,
+                        success,
+                        error_message
+                    )
+                    VALUES
+                    (
+                        gen_random_uuid(),
+                        @machine_id,
+                        @executed_at,
+                        @read_count,
+                        @inserted_count,
+                        @skipped_count,
+                        @success,
+                        @error_message
+                    );
+                    """;
+
+        command.Transaction = transaction;
+
+            command.Parameters.AddWithValue(
+                "machine_id",
+                machineId);
+
+            command.Parameters.AddWithValue(
+                "executed_at",
+                executedAt);
+
+            command.Parameters.AddWithValue(
+                "read_count",
+                Math.Max(0, request.ReadCount));
+
+            command.Parameters.AddWithValue(
+                "inserted_count",
+                Math.Max(0, request.InsertedCount));
+
+            command.Parameters.AddWithValue(
+                "skipped_count",
+                Math.Max(0, request.SkippedCount));
+
+            command.Parameters.AddWithValue(
+                "success",
+                request.Success);
+
+            command.Parameters.AddWithValue(
+                "error_message",
+                (object?)request.ErrorMessage
+                    ?? DBNull.Value);
+
+            await command.ExecuteNonQueryAsync();
+
+        await using var runtimeCommand =
+            connection.CreateCommand();
+
+        runtimeCommand.CommandText = """
+                    INSERT INTO public.finger_machine_runtime
+                    (
+                        finger_machine_id,
+                        is_online,
+                        last_pull_at,
+                        last_error_at,
+                        last_error,
+                        updated_at
+                    )
+                    VALUES
+                    (
+                        @machine_id,
+                        @is_online,
+                        @executed_at,
+                        @last_error_at,
+                        @last_error,
+                        NOW()
+                    )
+                    ON CONFLICT (finger_machine_id)
+                    DO UPDATE SET
+                        is_online =
+                            EXCLUDED.is_online,
+                        last_pull_at =
+                            CASE
+                                WHEN EXCLUDED.last_pull_at IS NOT NULL
+                                THEN EXCLUDED.last_pull_at
+                                ELSE public.finger_machine_runtime.last_pull_at
+                            END,
+                        last_error_at =
+                            EXCLUDED.last_error_at,
+                        last_error =
+                            EXCLUDED.last_error,
+                        updated_at = NOW();
+                    """;
+
+        runtimeCommand.Transaction = transaction;
+
+            runtimeCommand.Parameters.AddWithValue(
+                "machine_id",
+                machineId);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "is_online",
+                request.Success);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "executed_at",
+                request.Success
+                    ? executedAt
+                    : DBNull.Value);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "last_error_at",
+                request.Success
+                    ? DBNull.Value
+                    : executedAt);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "last_error",
+                request.Success
+                    ? DBNull.Value
+                    : (object?)request.ErrorMessage
+                      ?? "Finger machine pull failed.");
+
+            await runtimeCommand.ExecuteNonQueryAsync();
+
+        await transaction.CommitAsync();
+    }
+
+    public async Task RecordSyncResultAsync(
+        string machineCode,
+        FingerMachineSyncResultRequest request)
+    {
+        await using var dataSource =
+            CreateDataSource();
+
+        var machineId =
+            await GetMachineIdAsync(
+                dataSource,
+                machineCode);
+
+        var executedAt =
+            request.ExecutedAt ?? DateTime.UtcNow;
+
+        await using var connection =
+            await dataSource.OpenConnectionAsync();
+
+        await using var transaction =
+            await connection.BeginTransactionAsync();
+
+        await using var command =
+            connection.CreateCommand();
+
+        command.CommandText = """
+                    INSERT INTO public.finger_machine_sync_logs
+                    (
+                        id,
+                        finger_machine_id,
+                        executed_at,
+                        device_time_before,
+                        server_time,
+                        device_time_after,
+                        success,
+                        error_message
+                    )
+                    VALUES
+                    (
+                        gen_random_uuid(),
+                        @machine_id,
+                        @executed_at,
+                        @device_before,
+                        @server_time,
+                        @device_after,
+                        @success,
+                        @error_message
+                    );
+                    """;
+
+        command.Transaction = transaction;
+
+            command.Parameters.AddWithValue(
+                "machine_id",
+                machineId);
+
+            command.Parameters.AddWithValue(
+                "executed_at",
+                executedAt);
+
+            command.Parameters.AddWithValue(
+                "device_before",
+                (object?)request.DeviceTimeBefore
+                    ?? DBNull.Value);
+
+            command.Parameters.AddWithValue(
+                "server_time",
+                (object?)request.ServerTime
+                    ?? DBNull.Value);
+
+            command.Parameters.AddWithValue(
+                "device_after",
+                (object?)request.DeviceTimeAfter
+                    ?? DBNull.Value);
+
+            command.Parameters.AddWithValue(
+                "success",
+                request.Success);
+
+            command.Parameters.AddWithValue(
+                "error_message",
+                (object?)request.ErrorMessage
+                    ?? DBNull.Value);
+
+            await command.ExecuteNonQueryAsync();
+
+        await using var runtimeCommand =
+            connection.CreateCommand();
+
+        runtimeCommand.CommandText = """
+                    INSERT INTO public.finger_machine_runtime
+                    (
+                        finger_machine_id,
+                        is_online,
+                        last_seen_at,
+                        last_time_sync_at,
+                        last_error_at,
+                        last_error,
+                        updated_at
+                    )
+                    VALUES
+                    (
+                        @machine_id,
+                        @is_online,
+                        @executed_at,
+                        @last_sync_at,
+                        @last_error_at,
+                        @last_error,
+                        NOW()
+                    )
+                    ON CONFLICT (finger_machine_id)
+                    DO UPDATE SET
+                        is_online =
+                            EXCLUDED.is_online,
+                        last_seen_at =
+                            EXCLUDED.last_seen_at,
+                        last_time_sync_at =
+                            CASE
+                                WHEN EXCLUDED.last_time_sync_at IS NOT NULL
+                                THEN EXCLUDED.last_time_sync_at
+                                ELSE public.finger_machine_runtime.last_time_sync_at
+                            END,
+                        last_error_at =
+                            EXCLUDED.last_error_at,
+                        last_error =
+                            EXCLUDED.last_error,
+                        updated_at = NOW();
+                    """;
+
+        runtimeCommand.Transaction = transaction;
+
+            runtimeCommand.Parameters.AddWithValue(
+                "machine_id",
+                machineId);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "is_online",
+                request.Success);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "executed_at",
+                executedAt);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "last_sync_at",
+                request.Success
+                    ? executedAt
+                    : DBNull.Value);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "last_error_at",
+                request.Success
+                    ? DBNull.Value
+                    : executedAt);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "last_error",
+                request.Success
+                    ? DBNull.Value
+                    : (object?)request.ErrorMessage
+                      ?? "Finger machine time synchronization failed.");
+
+            await runtimeCommand.ExecuteNonQueryAsync();
+
+        await transaction.CommitAsync();
+    }
+
+    public async Task RecordClearResultAsync(
+        string machineCode,
+        FingerMachineClearResultRequest request)
+    {
+        await using var dataSource =
+            CreateDataSource();
+
+        var machineId =
+            await GetMachineIdAsync(
+                dataSource,
+                machineCode);
+
+        var executedAt =
+            request.ExecutedAt ?? DateTime.UtcNow;
+
+        await using var connection =
+            await dataSource.OpenConnectionAsync();
+
+        await using var transaction =
+            await connection.BeginTransactionAsync();
+
+        await using var command =
+            connection.CreateCommand();
+
+        command.CommandText = """
+                    INSERT INTO public.finger_machine_clear_logs
+                    (
+                        id,
+                        finger_machine_id,
+                        executed_at,
+                        cleared_count,
+                        success,
+                        error_message
+                    )
+                    VALUES
+                    (
+                        gen_random_uuid(),
+                        @machine_id,
+                        @executed_at,
+                        @cleared_count,
+                        @success,
+                        @error_message
+                    );
+                    """;
+
+        command.Transaction = transaction;
+
+            command.Parameters.AddWithValue(
+                "machine_id",
+                machineId);
+
+            command.Parameters.AddWithValue(
+                "executed_at",
+                executedAt);
+
+            command.Parameters.AddWithValue(
+                "cleared_count",
+                (object?)request.ClearedCount
+                    ?? DBNull.Value);
+
+            command.Parameters.AddWithValue(
+                "success",
+                request.Success);
+
+            command.Parameters.AddWithValue(
+                "error_message",
+                (object?)request.ErrorMessage
+                    ?? DBNull.Value);
+
+            await command.ExecuteNonQueryAsync();
+
+        await using var runtimeCommand =
+            connection.CreateCommand();
+
+        runtimeCommand.CommandText = """
+                    INSERT INTO public.finger_machine_runtime
+                    (
+                        finger_machine_id,
+                        is_online,
+                        last_clear_at,
+                        last_error_at,
+                        last_error,
+                        updated_at
+                    )
+                    VALUES
+                    (
+                        @machine_id,
+                        @is_online,
+                        @executed_at,
+                        @last_error_at,
+                        @last_error,
+                        NOW()
+                    )
+                    ON CONFLICT (finger_machine_id)
+                    DO UPDATE SET
+                        is_online =
+                            EXCLUDED.is_online,
+                        last_clear_at =
+                            CASE
+                                WHEN EXCLUDED.last_clear_at IS NOT NULL
+                                THEN EXCLUDED.last_clear_at
+                                ELSE public.finger_machine_runtime.last_clear_at
+                            END,
+                        last_error_at =
+                            EXCLUDED.last_error_at,
+                        last_error =
+                            EXCLUDED.last_error,
+                        updated_at = NOW();
+                    """;
+
+        runtimeCommand.Transaction = transaction;
+
+            runtimeCommand.Parameters.AddWithValue(
+                "machine_id",
+                machineId);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "is_online",
+                request.Success);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "executed_at",
+                request.Success
+                    ? executedAt
+                    : DBNull.Value);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "last_error_at",
+                request.Success
+                    ? DBNull.Value
+                    : executedAt);
+
+            runtimeCommand.Parameters.AddWithValue(
+                "last_error",
+                request.Success
+                    ? DBNull.Value
+                    : (object?)request.ErrorMessage
+                      ?? "Finger machine clear failed.");
+
+            await runtimeCommand.ExecuteNonQueryAsync();
+
+        await transaction.CommitAsync();
+    }
+
+    public async Task<object> ManualPullAsync(
+        string machineCode)
+    {
+        var machineCommand = _connection.CreateCommand();
+
+        machineCommand.CommandText = """
+            SELECT
+                code,
+                ip_address,
+                port
+            FROM public.finger_machines
+            WHERE code = @code
+            LIMIT 1;
+        """;
+
+        machineCommand.Parameters.AddWithValue(
+            "code",
+            machineCode);
+
+
+        await using var reader =
+            await machineCommand.ExecuteReaderAsync();
+
+
+        if (!await reader.ReadAsync())
+        {
+            throw new Exception(
+                "Finger machine not found.");
+        }
+
+
+        var ipAddress =
+            reader["ip_address"].ToString();
+
+        var port =
+            Convert.ToInt32(reader["port"]);
+
+
+        using var client =
+            new HttpClient();
+
+
+        var payload = new
+        {
+            ip = ipAddress,
+            port = port
+        };
+
+
+        var response =
+            await client.PostAsJsonAsync(
+                "http://192.168.100.129:8090/manual-pull",
+                payload);
+
+
+        var result =
+            await response.Content
+                .ReadFromJsonAsync<object>();
+
+
+        return result
+            ?? new
+            {
+                success = false,
+                message = "Empty response"
+            };
+    }
+
+}

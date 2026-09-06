@@ -7,6 +7,10 @@ public interface IUserService
 {
     Task<UserListResponse> GetUsersAsync();
 
+    Task<UserResponse?> GetUserByUsernameAsync(
+        string username
+    );
+
     Task<int> CountUsersAsync();
 
     Task CreateUserAsync(
