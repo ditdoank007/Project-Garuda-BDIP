@@ -1,41 +1,52 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { login } from "@/services/auth.service";
-import { toast } from "sonner";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const ssoRedirect = searchParams.get("sso_redirect");
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    console.log("LOGIN SUBMIT");
 
-    if (!username.trim() || !password) {
-      toast.error("Username dan password wajib diisi.");
+    if (submitting) {
+      return;
+    }
+
+    setError("");
+
+    const usernameValue = username.trim();
+
+    if (!usernameValue || !password) {
+      setError("Username dan password wajib diisi.");
       return;
     }
 
     try {
       setSubmitting(true);
 
-      await login(
-        username.trim(),
-        password,
-      );
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          username: usernameValue,
+          password,
+        }),
+      });
 
-      toast.success("Login berhasil.");
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Login gagal.");
+      }
+
+      const ssoRedirect =
+        new URLSearchParams(window.location.search).get("sso_redirect");
 
       if (ssoRedirect) {
         window.location.href =
@@ -43,15 +54,13 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace("/dashboard");
-      router.refresh();
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Login gagal.",
+      window.location.href = "/dashboard";
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Login gagal."
       );
-    } finally {
       setSubmitting(false);
     }
   }
@@ -64,42 +73,72 @@ export default function LoginPage() {
             <h1 className="text-2xl font-semibold">
               BDIP
             </h1>
+
             <p className="mt-2 text-sm text-slate-400">
               Basarnas Digital Identity Platform
             </p>
           </div>
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form
+            className="space-y-5"
+            action="/login-submit"
+            method="POST"
+            onSubmit={handleSubmit}
+            noValidate
+          >
             <div className="space-y-2">
-              <Label htmlFor="username">Username LDAP</Label>
-              <Input
+              <label
+                htmlFor="username"
+                className="text-sm font-medium"
+              >
+                Username LDAP
+              </label>
+
+              <input
                 id="username"
+                name="username"
+                type="text"
                 autoComplete="username"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 disabled={submitting}
+                className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
+              <label
+                htmlFor="password"
+                className="text-sm font-medium"
+              >
+                Password
+              </label>
+
+              <input
                 id="password"
+                name="password"
                 type="password"
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 disabled={submitting}
+                className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50"
               />
             </div>
 
-            <Button
-              className="w-full"
+            {error && (
+              <div className="rounded-md border border-red-800 bg-red-950/40 px-3 py-2 text-sm text-red-300">
+                {error}
+              </div>
+            )}
+
+            <button
+              className="inline-flex h-10 w-full items-center justify-center rounded-md bg-slate-100 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-slate-200 disabled:pointer-events-none disabled:opacity-50"
               type="submit"
               disabled={submitting}
             >
               {submitting ? "Memproses..." : "Masuk ke BDIP"}
-            </Button>
+            </button>
           </form>
         </section>
       </div>

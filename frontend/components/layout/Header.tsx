@@ -1,7 +1,16 @@
 import { Bell, Search } from "lucide-react";
+import { cookies } from "next/headers";
 import AccountMenu from "@/components/auth/AccountMenu";
+import { getCurrentUser } from "@/services/auth.service";
 
-export default function Header() {
+export default async function Header() {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join("; ");
+
+  const user = await getCurrentUser(cookieHeader);
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6 shadow-sm">
@@ -36,7 +45,7 @@ export default function Header() {
           <Bell size={22} />
         </button>
 
-        <AccountMenu />
+        <AccountMenu user={user} />
       </div>
     </header>
   );
