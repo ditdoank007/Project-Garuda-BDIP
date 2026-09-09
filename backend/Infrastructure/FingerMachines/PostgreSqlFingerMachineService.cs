@@ -63,7 +63,7 @@ public sealed class PostgreSqlFingerMachineService
                 FROM public.finger_machines fm
                 LEFT JOIN public.locations l
                     ON l.id = fm.location_id
-                ORDER BY fm.name;
+                ORDER BY fm.code;
                 """);
 
         await using var reader =

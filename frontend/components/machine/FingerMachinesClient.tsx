@@ -6,11 +6,13 @@ import {
   Pencil,
   Trash2,
   Download,
+  Settings,
 } from "lucide-react";
 
 import type {
   FingerMachine,
   FingerMachineFormData,
+  FingerMachinePolicy,
 } from "@/types/finger-machine";
 
 import type { Location } from "@/types/location";
@@ -24,6 +26,8 @@ import {
   getFingerMachineRuntimeStatus,
   getFingerMachinePullSchedule,
   updateFingerMachinePullSchedule,
+  getFingerMachinePolicy,
+  updateFingerMachinePolicy,
 } from "@/lib/api/finger-machines";
 
 import FingerMachineDialog from "./FingerMachineDialog";
@@ -133,6 +137,21 @@ export default function FingerMachinesClient({
   const [manualPullError, setManualPullError] =
     useState("");
 
+  const [policyMachine, setPolicyMachine] =
+    useState<FingerMachine | null>(null);
+
+  const [machinePolicy, setMachinePolicy] =
+    useState<FingerMachinePolicy | null>(null);
+
+  const [policyLoading, setPolicyLoading] =
+    useState(false);
+
+  const [policySaving, setPolicySaving] =
+    useState(false);
+
+  const [policyMessage, setPolicyMessage] =
+    useState("");
+
 
   function openManualPullModal(
     machine: FingerMachine,
@@ -152,6 +171,110 @@ export default function FingerMachinesClient({
     setManualPullMachine(null);
     setManualPullResult(null);
     setManualPullError("");
+  }
+
+  async function openPolicyModal(
+    machine: FingerMachine,
+  ) {
+    setPolicyMachine(machine);
+    setMachinePolicy(null);
+    setPolicyMessage("");
+    setPolicyLoading(true);
+
+    try {
+      const response =
+        await getFingerMachinePolicy(
+          machine.code,
+        );
+
+      const policy =
+        response?.data;
+
+      if (!policy) {
+        throw new Error(
+          "Policy mesin tidak ditemukan.",
+        );
+      }
+
+      setMachinePolicy(policy);
+    } catch (error) {
+      console.error(
+        "Failed to load machine policy:",
+        error,
+      );
+
+      setPolicyMessage(
+        error instanceof Error
+          ? error.message
+          : "Gagal membaca pengaturan mesin.",
+      );
+    } finally {
+      setPolicyLoading(false);
+    }
+  }
+
+  function closePolicyModal() {
+    if (policySaving) {
+      return;
+    }
+
+    setPolicyMachine(null);
+    setMachinePolicy(null);
+    setPolicyMessage("");
+  }
+
+  async function saveMachinePolicy() {
+    if (!policyMachine || !machinePolicy) {
+      return;
+    }
+
+    setPolicySaving(true);
+    setPolicyMessage("");
+
+    try {
+      const response =
+        await updateFingerMachinePolicy(
+          policyMachine.code,
+          {
+            collectionIntervalMinutes:
+              machinePolicy.collectionIntervalMinutes,
+            collectionEnabled:
+              machinePolicy.collectionEnabled,
+            timeSyncIntervalMinutes:
+              machinePolicy.timeSyncIntervalMinutes,
+            timeSyncEnabled:
+              machinePolicy.timeSyncEnabled,
+          },
+        );
+
+      if (!response?.success) {
+        throw new Error(
+          response?.message ||
+            "Gagal menyimpan pengaturan mesin.",
+        );
+      }
+
+      setMachinePolicy(
+        response.data ?? machinePolicy,
+      );
+
+      setPolicyMessage(
+        "Pengaturan Time Sync berhasil disimpan.",
+      );
+    } catch (error) {
+      console.error(
+        "Failed to save machine policy:",
+        error,
+      );
+
+      setPolicyMessage(
+        error instanceof Error
+          ? error.message
+          : "Gagal menyimpan pengaturan mesin.",
+      );
+    } finally {
+      setPolicySaving(false);
+    }
   }
 
 
@@ -705,6 +828,19 @@ export default function FingerMachinesClient({
                         </button>
 
                         <button
+                          type="button"
+                          onClick={() =>
+                            void openPolicyModal(
+                              machine,
+                            )
+                          }
+                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
+                        >
+                          <Settings size={16} />
+                          Pengaturan
+                        </button>
+
+                        <button
                           onClick={() =>
                             handleEditMachine(
                               machine,
@@ -1021,6 +1157,208 @@ export default function FingerMachinesClient({
       </div>
 
 
+
+      {policyMachine && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onClick={closePolicyModal}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  PENGATURAN MESIN FINGER
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Atur sinkronisasi waktu untuk mesin ini.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closePolicyModal}
+                disabled={policySaving}
+                className="rounded-lg px-2 py-1 text-xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-5">
+              <div className="rounded-xl bg-slate-50 p-4">
+                <div className="flex justify-between gap-4">
+                  <span className="text-sm text-slate-500">
+                    Mesin
+                  </span>
+
+                  <span className="text-sm font-semibold text-slate-900">
+                    {policyMachine.code}
+                  </span>
+                </div>
+
+                <div className="mt-2 flex justify-between gap-4">
+                  <span className="text-sm text-slate-500">
+                    Nama
+                  </span>
+
+                  <span className="text-right text-sm font-medium text-slate-900">
+                    {policyMachine.name}
+                  </span>
+                </div>
+              </div>
+
+              {policyLoading && (
+                <div className="rounded-lg border bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                  Membaca pengaturan mesin...
+                </div>
+              )}
+
+              {!policyLoading &&
+                machinePolicy && (
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700">
+                        TIME SYNC
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setMachinePolicy({
+                            ...machinePolicy,
+                            timeSyncEnabled:
+                              !machinePolicy.timeSyncEnabled,
+                          })
+                        }
+                        disabled={policySaving}
+                        className={
+                          machinePolicy.timeSyncEnabled
+                            ? "mt-2 flex w-full items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-left"
+                            : "mt-2 flex w-full items-center justify-between rounded-lg border bg-slate-50 px-4 py-3 text-left"
+                        }
+                      >
+                        <span>
+                          <span
+                            className={
+                              machinePolicy.timeSyncEnabled
+                                ? "block font-semibold text-green-700"
+                                : "block font-semibold text-slate-600"
+                            }
+                          >
+                            {machinePolicy.timeSyncEnabled
+                              ? "ACTIVE"
+                              : "DISABLED"}
+                          </span>
+
+                          <span className="block text-xs text-slate-500">
+                            {machinePolicy.timeSyncEnabled
+                              ? "Sinkronisasi waktu otomatis aktif."
+                              : "Sinkronisasi waktu otomatis tidak dijalankan."}
+                          </span>
+                        </span>
+
+                        <span
+                          className={
+                            machinePolicy.timeSyncEnabled
+                              ? "text-green-600"
+                              : "text-slate-400"
+                          }
+                        >
+                          ●
+                        </span>
+                      </button>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="machine-time-sync-interval"
+                        className="block text-sm font-medium text-slate-700"
+                      >
+                        Interval Sinkronisasi Waktu
+                      </label>
+
+                      <select
+                        id="machine-time-sync-interval"
+                        value={
+                          machinePolicy.timeSyncIntervalMinutes
+                        }
+                        onChange={(event) =>
+                          setMachinePolicy({
+                            ...machinePolicy,
+                            timeSyncIntervalMinutes:
+                              Number(event.target.value),
+                          })
+                        }
+                        disabled={policySaving}
+                        className="mt-2 w-full rounded-lg border px-3 py-2 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                      >
+                        <option value={2}>
+                          Setiap 2 menit
+                        </option>
+
+                        <option value={5}>
+                          Setiap 5 menit
+                        </option>
+                      </select>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        Pengaturan ini berlaku khusus untuk mesin {policyMachine.code}.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              {policyMessage && (
+                <div
+                  className={
+                    policyMessage.includes(
+                      "berhasil",
+                    )
+                      ? "rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700"
+                      : "rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700"
+                  }
+                >
+                  {policyMessage}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closePolicyModal}
+                disabled={policySaving}
+                className="rounded-lg border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  void saveMachinePolicy()
+                }
+                disabled={
+                  policyLoading ||
+                  policySaving ||
+                  !machinePolicy
+                }
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {policySaving
+                  ? "Menyimpan..."
+                  : "Simpan Pengaturan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {manualPullMachine && (
         <div

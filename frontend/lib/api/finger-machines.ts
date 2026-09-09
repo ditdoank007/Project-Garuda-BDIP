@@ -40,6 +40,33 @@ export async function deleteFingerMachine(
   return response.data;
 }
 
+export async function getFingerMachinePolicy(
+  code: string,
+) {
+  const response = await axios.get(
+    `${API_URL}/finger-machines/${encodeURIComponent(code)}/policy`,
+  );
+
+  return response.data;
+}
+
+export async function updateFingerMachinePolicy(
+  code: string,
+  policy: {
+    collectionIntervalMinutes: number;
+    collectionEnabled: boolean;
+    timeSyncIntervalMinutes: number;
+    timeSyncEnabled: boolean;
+  },
+) {
+  const response = await axios.put(
+    `${API_URL}/finger-machines/${encodeURIComponent(code)}/policy`,
+    policy,
+  );
+
+  return response.data;
+}
+
 export interface FingerMachineGlobalPolicy {
   clearEnabled: boolean;
   clearTime: string;

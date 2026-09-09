@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Logo } from "../common";
 
 import {
@@ -14,14 +17,16 @@ import {
   Settings,
   Network,
   Fingerprint,
+  ClipboardCheck,
+  ChevronDown,
+  Database,
+  Search,
+  Eye,
+  RefreshCw,
+  Shield,
 } from "lucide-react";
 
-const menus = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
+const administrationMenus = [
   {
     title: "Users",
     href: "/users",
@@ -74,60 +79,174 @@ const menus = [
   },
 ];
 
-const machineMenus = [
+const attendanceMenus = [
   {
-    title: "Mesin Finger",
-    href: "/machine/finger",
+    title: "Master Attendance",
+    href: "/attendance/master",
+    icon: Database,
+  },
+  {
+    title: "Master Mesin",
+    href: "/attendance/master-machine",
     icon: Fingerprint,
+  },
+  {
+    title: "Discovery",
+    href: "/attendance/discovery",
+    icon: Search,
+  },
+  {
+    title: "Preview",
+    href: "/attendance/preview",
+    icon: Eye,
+  },
+  {
+    title: "Sinkronisasi",
+    href: "/attendance/synchronization",
+    icon: RefreshCw,
   },
 ];
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
+  const administrationActive = administrationMenus.some(
+    (menu) => pathname === menu.href || pathname.startsWith(`${menu.href}/`),
+  );
+
+  const attendanceActive = pathname.startsWith("/attendance");
+
   return (
     <aside className="w-72 bg-slate-900 text-white shadow-xl">
-
       <div className="border-b border-slate-800 p-6">
         <Logo />
       </div>
 
       <nav className="mt-4">
+        <Link
+          href="/dashboard"
+          className={`mx-3 mb-1 flex items-center gap-3 rounded-lg px-4 py-3 transition ${
+            pathname === "/dashboard"
+              ? "bg-slate-800 text-white"
+              : "hover:bg-slate-800"
+          }`}
+        >
+          <LayoutDashboard size={20} />
+          <span>Dashboard</span>
+        </Link>
 
-        {menus.map((menu) => {
-          const Icon = menu.icon;
+        <div className="mx-3 mt-1">
+          <Link
+            href="/users"
+            className={`mb-1 flex items-center justify-between rounded-lg px-4 py-3 transition ${
+              administrationActive
+                ? "bg-slate-800 text-white"
+                : "hover:bg-slate-800"
+            }`}
+          >
+            <span className="flex items-center gap-3">
+              <Shield size={20} />
+              <span>Administration</span>
+            </span>
 
-          return (
-            <Link
-              key={menu.href}
-              href={menu.href}
-              className="mx-3 mb-1 flex items-center gap-3 rounded-lg px-4 py-3 transition hover:bg-slate-800"
-            >
-              <Icon size={20} />
-              <span>{menu.title}</span>
-            </Link>
-          );
-        })}
+            <ChevronDown
+              size={17}
+              className={`transition-transform ${
+                administrationActive ? "rotate-0" : "-rotate-90"
+              }`}
+            />
+          </Link>
+
+          {administrationActive && (
+            <div className="mb-2 ml-4 border-l border-slate-700 pl-2">
+              {administrationMenus.map((menu) => {
+                const Icon = menu.icon;
+                const active =
+                  pathname === menu.href ||
+                  pathname.startsWith(`${menu.href}/`);
+
+                return (
+                  <Link
+                    key={menu.href}
+                    href={menu.href}
+                    className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
+                      active
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                    }`}
+                  >
+                    <Icon size={17} />
+                    <span>{menu.title}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         <div className="mt-6 px-6 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
           Machine
         </div>
 
-        {machineMenus.map((menu) => {
-          const Icon = menu.icon;
+        <div className="mx-3">
+          <Link
+            href="/attendance/master"
+            className={`mb-1 flex items-center justify-between rounded-lg px-4 py-3 transition ${
+              attendanceActive
+                ? "bg-slate-800 text-white"
+                : "hover:bg-slate-800"
+            }`}
+          >
+            <span className="flex items-center gap-3">
+              <ClipboardCheck size={20} />
+              <span>Attendance</span>
+            </span>
 
-          return (
-            <Link
-              key={menu.href}
-              href={menu.href}
-              className="mx-3 mb-1 flex items-center gap-3 rounded-lg px-4 py-3 transition hover:bg-slate-800"
-            >
-              <Icon size={20} />
-              <span>{menu.title}</span>
-            </Link>
-          );
-        })}
+            <ChevronDown
+              size={17}
+              className={`transition-transform ${
+                attendanceActive ? "rotate-0" : "-rotate-90"
+              }`}
+            />
+          </Link>
 
+          {attendanceActive && (
+            <div className="mb-2 ml-4 border-l border-slate-700 pl-2">
+              {attendanceMenus.map((menu) => {
+                const Icon = menu.icon;
+                const active = pathname === menu.href;
+
+                return (
+                  <Link
+                    key={menu.href}
+                    href={menu.href}
+                    className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
+                      active
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                    }`}
+                  >
+                    <Icon size={17} />
+                    <span>{menu.title}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <Link
+          href="/machine/finger"
+          className={`mx-3 mb-1 flex items-center gap-3 rounded-lg px-4 py-3 transition ${
+            pathname.startsWith("/machine/finger")
+              ? "bg-slate-800 text-white"
+              : "hover:bg-slate-800"
+          }`}
+        >
+          <Fingerprint size={20} />
+          <span>Mesin Finger</span>
+        </Link>
       </nav>
-
     </aside>
   );
 }

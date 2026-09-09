@@ -1,3 +1,5 @@
+using BDIP.Application.AttendanceSynchronizationSchedule;
+using BDIP.Infrastructure.AttendanceSynchronizationSchedule;
 using BDIP.Application.Applications;
 using BDIP.Application.Auth;
 using BDIP.Infrastructure.Applications;
@@ -28,12 +30,14 @@ using BDIP.Application.Roles;
 using BDIP.Infrastructure.Roles;
 using BDIP.Application.Locations;
 using BDIP.Application.FingerMachines;
+using BDIP.Application.Attendance;
 using BDIP.Application.FingerMachineGlobalPolicy;
 using BDIP.Application.FingerMachinePolicies;
 using BDIP.Application.FingerMachineRuntime;
 using BDIP.Application.FingerMachinePullSchedule;
 using BDIP.Infrastructure.Locations;
 using BDIP.Infrastructure.FingerMachines;
+using BDIP.Infrastructure.Attendance;
 using BDIP.Infrastructure.FingerMachinePolicies;
 using BDIP.Infrastructure.FingerMachineRuntime;
 using BDIP.Infrastructure.FingerMachinePullSchedule;
@@ -149,6 +153,24 @@ builder.Services.AddScoped<IFingerMachinePolicyService, PostgreSqlFingerMachineP
 builder.Services.AddScoped<IFingerMachineRuntimeService, PostgreSqlFingerMachineRuntimeService>();
 builder.Services.AddScoped<IFingerMachineGlobalPolicyService, PostgreSqlFingerMachineGlobalPolicyService>();
 builder.Services.AddScoped<IFingerMachinePullScheduleService, PostgreSqlFingerMachinePullScheduleService>();
+builder.Services.AddHttpClient<IAttendancePreviewService, PostgreSqlAttendancePreviewService>();
+builder.Services.AddHttpClient<IAttendanceDiscoveryService, PostgreSqlAttendanceDiscoveryService>();
+builder.Services.AddHttpClient<IAttendanceDiscoveryImportService, PostgreSqlAttendanceDiscoveryImportService>();
+builder.Services.AddHttpClient<IAttendanceImportService, PostgreSqlAttendanceImportService>();
+builder.Services.AddScoped<IAttendanceMasterService, PostgreSqlAttendanceMasterService>();
+builder.Services.AddHttpClient<IAttendanceMachineUserService, PostgreSqlAttendanceMachineUserService>();
+builder.Services.AddHttpClient<IAttendanceMachineSnapshotService, PostgreSqlAttendanceMachineSnapshotService>();
+builder.Services.AddHttpClient<IAttendanceReconciliationService, PostgreSqlAttendanceReconciliationService>();
+builder.Services.AddHttpClient<IAttendanceSynchronizationService, PostgreSqlAttendanceSynchronizationService>();
+builder.Services.AddScoped<PostgreSqlAttendanceSynchronizationScheduleService>();
+builder.Services.AddScoped<IAttendanceSynchronizationScheduleService>(
+    sp => sp.GetRequiredService<PostgreSqlAttendanceSynchronizationScheduleService>());
+builder.Services.AddScoped<IAttendanceSynchronizationScheduleStateService>(
+    sp => sp.GetRequiredService<PostgreSqlAttendanceSynchronizationScheduleService>());
+builder.Services.AddHostedService<AttendanceSynchronizationScheduler>();
+builder.Services.AddHttpClient<IAttendanceGlobalUserStatusService, PostgreSqlAttendanceGlobalUserStatusService>();
+builder.Services.AddHttpClient<IHrisStatusSyncService, PostgreSqlHrisStatusSyncService>();
+builder.Services.AddScoped<IAttendanceMasterMachineService, PostgreSqlAttendanceMasterMachineService>();
 builder.Services.AddScoped<IPolicyService, PostgreSqlPolicyService>();
 builder.Services.AddScoped<IUserNapService, PostgreSqlUserNapService>();
 builder.Services.AddScoped<ISessionService, PostgreSqlSessionService>();

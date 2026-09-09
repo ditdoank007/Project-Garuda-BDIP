@@ -23,6 +23,7 @@ services:
         NEXT_PUBLIC_API_URL: /api
 
     environment:
+      TZ: Asia/Jakarta
       BDIP_INTERNAL_API_URL: http://backend:8080/api
     expose:
       - "3000"
@@ -65,6 +66,8 @@ services:
     build:
       context: ..
       dockerfile: docker/backend/Dockerfile.prod
+    environment:
+      TZ: Asia/Jakarta
     expose:
       - "8080"
     restart: unless-stopped

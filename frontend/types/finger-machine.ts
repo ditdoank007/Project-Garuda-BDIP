@@ -19,6 +19,24 @@ export interface FingerMachineListResponse {
 }
 
 
+export interface FingerMachinePolicy {
+  machineId: string;
+  machineCode: string;
+  machineName: string;
+  collectionIntervalMinutes: number;
+  collectionEnabled: boolean;
+  timeSyncIntervalMinutes: number;
+  timeSyncEnabled: boolean;
+  updatedAt: string;
+}
+
+export interface FingerMachinePolicyUpdate {
+  collectionIntervalMinutes: number;
+  collectionEnabled: boolean;
+  timeSyncIntervalMinutes: number;
+  timeSyncEnabled: boolean;
+}
+
 export interface FingerMachineFormData {
   code: string;
   name: string;

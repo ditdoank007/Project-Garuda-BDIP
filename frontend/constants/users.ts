@@ -13,6 +13,8 @@ import { UserFormData } from "@/types/users";
 
 export const defaultUserForm: UserFormData = {
   username: "",
+  nip: "",
+  fingerId: "",
   fullName: "",
   email: "",
   unit: "",

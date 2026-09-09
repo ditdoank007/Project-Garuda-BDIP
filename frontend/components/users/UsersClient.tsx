@@ -290,6 +290,8 @@ export default function UsersClient({
       await updateUser(username, {
         uid: username,
         username,
+        nip: formData.nip.trim(),
+        fingerId: formData.fingerId.trim(),
         fullName,
         email,
         unit,
