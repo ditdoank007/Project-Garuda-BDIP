@@ -12,9 +12,9 @@ namespace BDIP.Infrastructure.Users;
 
 public sealed class PostgreSqlUserService : IUserService
 {
-private readonly ApplicationDbOptions _options;
-private readonly ILdapProvisioningService _ldapProvisioning;
-private readonly IRadiusProvisioningService _radiusProvisioning;
+    private readonly ApplicationDbOptions _options;
+    private readonly ILdapProvisioningService _ldapProvisioning;
+    private readonly IRadiusProvisioningService _radiusProvisioning;
 
     public PostgreSqlUserService(
         IOptions<ApplicationDbOptions> options,
@@ -61,10 +61,10 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
                     u.email,
                     un.name AS unit,
                     u.enabled
-                    FROM public.users AS u
-                    LEFT JOIN public.units AS un
-                        ON u.unit_id = un.id
-                    ORDER BY u.full_name;
+                FROM public.users AS u
+                LEFT JOIN public.units AS un
+                    ON u.unit_id = un.id
+                ORDER BY u.full_name;
                 """);
 
         await using var reader = await command.ExecuteReaderAsync();
@@ -110,7 +110,6 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
 
         return Map(reader);
     }
-
 
     public async Task<int> CountUsersAsync()
     {
@@ -217,10 +216,11 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
 
         await command.ExecuteNonQueryAsync();
 
-        // Provision otomatis ke OpenLDAP
+        // BDIP is the administration master.
+        // Provision the same credential into LDAP.
         await _ldapProvisioning.CreateUserAsync(request);
 
-        // Provision otomatis ke FreeRADIUS
+        // FreeRADIUS deliberately has no independent password copy.
         await _radiusProvisioning.CreateUserAsync(request);
     }
 
@@ -295,13 +295,47 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
             throw new InvalidOperationException(
                 $"User '{username}' not found.");
         }
+
+        // Keep downstream identity attributes aligned with BDIP.
+        await _ldapProvisioning.UpdateUserAsync(
+            username,
+            request);
+
+        await _ldapProvisioning.UpdateUserStatusAsync(
+            username,
+            new UpdateUserStatusRequest
+            {
+                Enabled = request.Enabled
+            });
     }
 
-    public Task ResetPasswordAsync(
+    public async Task ResetPasswordAsync(
         string username,
         ResetUserPasswordRequest request)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new InvalidOperationException(
+                "Username is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            throw new InvalidOperationException(
+                "New password is required.");
+        }
+
+        // Password reset originates in BDIP and is immediately propagated.
+        // The plaintext password is never stored in the BDIP database or in
+        // FreeRADIUS. LDAP stores the salted hash used by FreeRADIUS PAP.
+        await _ldapProvisioning.ResetPasswordAsync(
+            username,
+            request);
+
+        // Remove any legacy FreeRADIUS password so it cannot override LDAP.
+        await _radiusProvisioning.ResetPasswordAsync(username);
     }
 
     public async Task UpdateUserStatusAsync(
@@ -338,6 +372,10 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
             throw new InvalidOperationException(
                 $"User '{username}' not found.");
         }
+
+        await _ldapProvisioning.UpdateUserStatusAsync(
+            username,
+            request);
     }
 
     public async Task DeleteUserAsync(
@@ -364,11 +402,10 @@ private readonly IRadiusProvisioningService _radiusProvisioning;
             throw new InvalidOperationException(
                 $"User '{username}' not found.");
         }
-            await _radiusProvisioning
-                .RemoveUserGroupAsync(username);
 
-            await _radiusProvisioning
-                .DeleteUserAsync(username);
+        await _ldapProvisioning.DeleteUserAsync(username);
+        await _radiusProvisioning.RemoveUserGroupAsync(username);
+        await _radiusProvisioning.DeleteUserAsync(username);
     }
 
     private async Task<Guid?> FindUnitIdAsync(
