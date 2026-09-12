@@ -10,6 +10,10 @@ public interface ILdapProvisioningService
         string username,
         UpdateUserRequest request);
 
+    Task RenameUserAsync(
+        string username,
+        string newUsername);
+
     Task DeleteUserAsync(
         string username);
 
