@@ -37,37 +37,30 @@ public sealed class PostgreSqlRadiusProvisioningService
 
     public async Task CreateUserAsync(CreateUserRequest request)
     {
+        // Password authentication is owned by BDIP -> LDAP.
+        // FreeRADIUS must not keep an independent password copy.
+        await ResetPasswordAsync(request.Username);
+    }
+
+    public async Task ResetPasswordAsync(string username)
+    {
         await using var dataSource = CreateDataSource();
 
+        // Remove any legacy per-user password from radcheck.
+        // FreeRADIUS will obtain the known-good password from LDAP.
         await using var command =
             dataSource.CreateCommand(
             """
-            INSERT INTO public.radcheck
-            (
-                username,
-                attribute,
-                op,
-                value
-            )
-            VALUES
-            (
-                @username,
-                'Cleartext-Password',
-                ':=',
-                @password
-            );
+            DELETE FROM public.radcheck
+            WHERE username=@username
+              AND LOWER(attribute)=LOWER('Cleartext-Password');
             """);
 
-        command.Parameters.AddWithValue(
-            "username",
-            request.Username);
-
-        command.Parameters.AddWithValue(
-            "password",
-            request.Password);
+        command.Parameters.AddWithValue("username", username);
 
         await command.ExecuteNonQueryAsync();
     }
+
     public async Task SyncPolicyAsync(
         Policy policy)
     {
@@ -87,35 +80,37 @@ public sealed class PostgreSqlRadiusProvisioningService
             policy.Code);
 
         await command.ExecuteNonQueryAsync();
+
         await using var insert =
-        dataSource.CreateCommand(
-        """
-        INSERT INTO public.radgroupreply
-        (
-            groupname,
-            attribute,
-            op,
-            value
-        )
-        VALUES
-        (
-            @groupname,
-            'Session-Timeout',
-            '=',
-            @value
-        );
-        """);
+            dataSource.CreateCommand(
+            """
+            INSERT INTO public.radgroupreply
+            (
+                groupname,
+                attribute,
+                op,
+                value
+            )
+            VALUES
+            (
+                @groupname,
+                'Session-Timeout',
+                '=',
+                @value
+            );
+            """);
 
-    insert.Parameters.AddWithValue(
-        "groupname",
-        policy.Code);
+        insert.Parameters.AddWithValue(
+            "groupname",
+            policy.Code);
 
-    insert.Parameters.AddWithValue(
-        "value",
-        policy.SessionTimeout.ToString());
+        insert.Parameters.AddWithValue(
+            "value",
+            policy.SessionTimeout.ToString());
 
-    await insert.ExecuteNonQueryAsync();
-    if (policy.IdleTimeout > 0)
+        await insert.ExecuteNonQueryAsync();
+
+        if (policy.IdleTimeout > 0)
         {
             await using var idle =
                 dataSource.CreateCommand(
@@ -146,6 +141,7 @@ public sealed class PostgreSqlRadiusProvisioningService
 
             await idle.ExecuteNonQueryAsync();
         }
+
         if (policy.DownloadRate > 0 ||
             policy.UploadRate > 0)
         {
@@ -178,6 +174,7 @@ public sealed class PostgreSqlRadiusProvisioningService
 
             await rate.ExecuteNonQueryAsync();
         }
+
         if (!string.IsNullOrWhiteSpace(policy.IpPool))
         {
             await using var pool =
@@ -209,6 +206,7 @@ public sealed class PostgreSqlRadiusProvisioningService
 
             await pool.ExecuteNonQueryAsync();
         }
+
         if (!string.IsNullOrWhiteSpace(policy.AddressList))
         {
             await using var address =
@@ -245,8 +243,7 @@ public sealed class PostgreSqlRadiusProvisioningService
     public async Task DeletePolicyAsync(
         string policyCode)
     {
-        await using var dataSource =
-            CreateDataSource();
+        await using var dataSource = CreateDataSource();
 
         await using var reply =
             dataSource.CreateCommand(
@@ -267,10 +264,8 @@ public sealed class PostgreSqlRadiusProvisioningService
         string username,
         string policyCode)
     {
-        await using var dataSource =
-            CreateDataSource();
+        await using var dataSource = CreateDataSource();
 
-        // Hapus mapping lama
         await using (var delete =
             dataSource.CreateCommand(
             """
@@ -286,7 +281,6 @@ public sealed class PostgreSqlRadiusProvisioningService
             await delete.ExecuteNonQueryAsync();
         }
 
-        // Tambahkan mapping baru
         await using (var insert =
             dataSource.CreateCommand(
             """
@@ -319,8 +313,7 @@ public sealed class PostgreSqlRadiusProvisioningService
     public async Task RemoveUserGroupAsync(
         string username)
     {
-        await using var dataSource =
-            CreateDataSource();
+        await using var dataSource = CreateDataSource();
 
         await using var command =
             dataSource.CreateCommand(
@@ -340,14 +333,12 @@ public sealed class PostgreSqlRadiusProvisioningService
     public async Task DeleteUserAsync(
         string username)
     {
-        await using var dataSource =
-            CreateDataSource();
+        await using var dataSource = CreateDataSource();
 
         await using var command =
             dataSource.CreateCommand(
             """
-            DELETE
-            FROM public.radcheck
+            DELETE FROM public.radcheck
             WHERE username=@username;
             """);
 
