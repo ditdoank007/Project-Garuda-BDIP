@@ -72,20 +72,20 @@ public sealed class PostgreSqlRadiusProvisioningService
         }
 
         await using var dataSource = CreateDataSource();
-
-        await using var transaction =
-            await dataSource.BeginTransactionAsync();
+        await using var connection = await dataSource.OpenConnectionAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
 
         try
         {
             await using (var radcheck =
-                dataSource.CreateCommand(
-                """
-                UPDATE public.radcheck
-                SET username=@newusername
-                WHERE username=@username;
-                """))
+                connection.CreateCommand())
             {
+                radcheck.CommandText =
+                    """
+                    UPDATE public.radcheck
+                    SET username=@newusername
+                    WHERE username=@username;
+                    """;
                 radcheck.Transaction = transaction;
                 radcheck.Parameters.AddWithValue("username", username);
                 radcheck.Parameters.AddWithValue("newusername", newUsername);
@@ -93,13 +93,14 @@ public sealed class PostgreSqlRadiusProvisioningService
             }
 
             await using (var radusergroup =
-                dataSource.CreateCommand(
-                """
-                UPDATE public.radusergroup
-                SET username=@newusername
-                WHERE username=@username;
-                """))
+                connection.CreateCommand())
             {
+                radusergroup.CommandText =
+                    """
+                    UPDATE public.radusergroup
+                    SET username=@newusername
+                    WHERE username=@username;
+                    """;
                 radusergroup.Transaction = transaction;
                 radusergroup.Parameters.AddWithValue("username", username);
                 radusergroup.Parameters.AddWithValue("newusername", newUsername);
