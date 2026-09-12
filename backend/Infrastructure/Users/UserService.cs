@@ -311,6 +311,45 @@ public class UserService : ILdapProvisioningService
         connection.SendRequest(modifyRequest);
     }
 
+    public async Task RenameUserAsync(
+        string username,
+        string newUsername)
+    {
+        await Task.CompletedTask;
+
+        if (string.IsNullOrWhiteSpace(username) ||
+            string.IsNullOrWhiteSpace(newUsername))
+        {
+            throw new ArgumentException("Both usernames are required.");
+        }
+
+        if (string.Equals(
+            username,
+            newUsername,
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        using var connection = _ldap.Create();
+
+        string oldDn =
+            $"uid={EscapeDnValue(username)},{_options.PeopleDn}";
+
+        string newRdn =
+            $"uid={EscapeDnValue(newUsername)}";
+
+        var request = new ModifyDNRequest(
+            oldDn,
+            _options.PeopleDn,
+            newRdn)
+        {
+            DeleteOldRdn = true
+        };
+
+        connection.SendRequest(request);
+    }
+
     public async Task ResetPasswordAsync(
         string username,
         ResetUserPasswordRequest request)
