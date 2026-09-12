@@ -21,9 +21,7 @@ export async function getUsers() {
   return apiGet<UserListResponse>("/users");
 }
 
-export async function createUser(
-  user: UserFormData,
-) {
+export async function createUser(user: UserFormData) {
   return apiPost("/users", {
     username: user.username,
     nip: user.nip,
@@ -43,6 +41,9 @@ export async function updateUser(
   return apiPut(
     `/users/${encodeURIComponent(username)}`,
     {
+      username: user.username,
+      nip: user.nip,
+      fingerId: user.fingerId,
       fullName: user.fullName,
       email: user.email,
       unit: user.unit,
@@ -57,26 +58,15 @@ export async function updateUserStatus(
 ) {
   return apiPut(
     `/users/${encodeURIComponent(username)}/status`,
-    {
-      enabled,
-    },
+    { enabled },
   );
 }
 
-export async function deleteUser(
-  username: string,
-) {
+export async function deleteUser(username: string) {
   return apiDelete(
     `/users/${encodeURIComponent(username)}`,
   );
 }
-
-/*
- * Import CSV Synology
- * Masih menggunakan endpoint yang sama.
- * Kita migrasikan setelah upload helper
- * sudah dipusatkan di services/api.
- */
 
 export async function uploadSynologyUserCsv(
   file: File,
