@@ -50,22 +50,21 @@ public sealed class PostgreSqlUserService : IUserService
 
         await using var dataSource = CreateDataSource();
 
-        await using var command =
-            dataSource.CreateCommand(
-                """
-                SELECT
-                    u.username,
-                    u.nip,
-                    u.finger_id,
-                    u.full_name,
-                    u.email,
-                    un.name AS unit,
-                    u.enabled
-                FROM public.users AS u
-                LEFT JOIN public.units AS un
-                    ON u.unit_id = un.id
-                ORDER BY u.full_name;
-                """);
+        await using var command = dataSource.CreateCommand(
+            """
+            SELECT
+                u.username,
+                u.nip,
+                u.finger_id,
+                u.full_name,
+                u.email,
+                un.name AS unit,
+                u.enabled
+            FROM public.users AS u
+            LEFT JOIN public.units AS un
+                ON u.unit_id = un.id
+            ORDER BY u.full_name;
+            """);
 
         await using var reader = await command.ExecuteReaderAsync();
 
@@ -77,33 +76,30 @@ public sealed class PostgreSqlUserService : IUserService
         return result;
     }
 
-    public async Task<UserResponse?> GetUserByUsernameAsync(
-        string username)
+    public async Task<UserResponse?> GetUserByUsernameAsync(string username)
     {
         await using var dataSource = CreateDataSource();
 
-        await using var command =
-            dataSource.CreateCommand(
-                """
-                SELECT
-                    u.username,
-                    u.nip,
-                    u.finger_id,
-                    u.full_name,
-                    u.email,
-                    un.name AS unit,
-                    u.enabled
-                FROM public.users AS u
-                LEFT JOIN public.units AS un
-                    ON u.unit_id = un.id
-                WHERE LOWER(u.username) = LOWER(@username)
-                LIMIT 1;
-                """);
+        await using var command = dataSource.CreateCommand(
+            """
+            SELECT
+                u.username,
+                u.nip,
+                u.finger_id,
+                u.full_name,
+                u.email,
+                un.name AS unit,
+                u.enabled
+            FROM public.users AS u
+            LEFT JOIN public.units AS un
+                ON u.unit_id = un.id
+            WHERE LOWER(u.username) = LOWER(@username)
+            LIMIT 1;
+            """);
 
         command.Parameters.AddWithValue("username", username);
 
-        await using var reader =
-            await command.ExecuteReaderAsync();
+        await using var reader = await command.ExecuteReaderAsync();
 
         if (!await reader.ReadAsync())
             return null;
@@ -115,112 +111,79 @@ public sealed class PostgreSqlUserService : IUserService
     {
         await using var dataSource = CreateDataSource();
 
-        await using var command =
-            dataSource.CreateCommand(
-                """
-                SELECT COUNT(*)
-                FROM public.users;
-                """);
+        await using var command = dataSource.CreateCommand(
+            """
+            SELECT COUNT(*)
+            FROM public.users;
+            """);
 
         var result = await command.ExecuteScalarAsync();
-
         return Convert.ToInt32(result);
     }
 
-    public async Task CreateUserAsync(
-        CreateUserRequest request)
+    public async Task CreateUserAsync(CreateUserRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         if (string.IsNullOrWhiteSpace(request.Username))
         {
-            throw new InvalidOperationException(
-                "Username is required.");
+            throw new InvalidOperationException("Username is required.");
         }
 
         await using var dataSource = CreateDataSource();
 
-        if (await UsernameExistsAsync(
-            dataSource,
-            request.Username))
+        if (await UsernameExistsAsync(dataSource, request.Username))
         {
             throw new InvalidOperationException(
                 $"Username '{request.Username}' already exists.");
         }
 
-        var unitId =
-            await FindUnitIdAsync(
-                dataSource,
-                request.Unit);
+        var unitId = await FindUnitIdAsync(dataSource, request.Unit);
 
-        await using var command =
-            dataSource.CreateCommand(
-                """
-                INSERT INTO public.users
-                (
-                    username,
-                    nip,
-                    finger_id,
-                    full_name,
-                    email,
-                    unit_id,
-                    enabled
-                )
-                VALUES
-                (
-                    @username,
-                    @nip,
-                    @fingerid,
-                    @fullname,
-                    @email,
-                    @unitid,
-                    @enabled
-                );
-                """);
+        await using var command = dataSource.CreateCommand(
+            """
+            INSERT INTO public.users
+            (
+                username,
+                nip,
+                finger_id,
+                full_name,
+                email,
+                unit_id,
+                enabled
+            )
+            VALUES
+            (
+                @username,
+                @nip,
+                @fingerid,
+                @fullname,
+                @email,
+                @unitid,
+                @enabled
+            );
+            """);
 
-        command.Parameters.AddWithValue(
-            "username",
-            request.Username);
-
+        command.Parameters.AddWithValue("username", request.Username);
         command.Parameters.AddWithValue(
             "nip",
-            string.IsNullOrWhiteSpace(request.Nip)
-                ? DBNull.Value
-                : request.Nip);
-
+            string.IsNullOrWhiteSpace(request.Nip) ? DBNull.Value : request.Nip);
         command.Parameters.AddWithValue(
             "fingerid",
-            string.IsNullOrWhiteSpace(request.FingerId)
-                ? DBNull.Value
-                : request.FingerId);
-
-        command.Parameters.AddWithValue(
-            "fullname",
-            request.FullName);
-
+            string.IsNullOrWhiteSpace(request.FingerId) ? DBNull.Value : request.FingerId);
+        command.Parameters.AddWithValue("fullname", request.FullName);
         command.Parameters.AddWithValue(
             "email",
-            string.IsNullOrWhiteSpace(request.Email)
-                ? DBNull.Value
-                : request.Email);
-
+            string.IsNullOrWhiteSpace(request.Email) ? DBNull.Value : request.Email);
         command.Parameters.AddWithValue(
             "unitid",
-            unitId is null
-                ? DBNull.Value
-                : unitId);
-
-        command.Parameters.AddWithValue(
-            "enabled",
-            request.Enabled);
+            unitId is null ? DBNull.Value : unitId);
+        command.Parameters.AddWithValue("enabled", request.Enabled);
 
         await command.ExecuteNonQueryAsync();
 
         // BDIP is the administration master.
-        // Provision the same credential into LDAP.
         await _ldapProvisioning.CreateUserAsync(request);
-
-        // FreeRADIUS deliberately has no independent password copy.
         await _radiusProvisioning.CreateUserAsync(request);
     }
 
@@ -230,65 +193,60 @@ public sealed class PostgreSqlUserService : IUserService
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        var newUsername = string.IsNullOrWhiteSpace(request.Username)
+            ? username
+            : request.Username.Trim();
+
+        if (!string.Equals(
+            username,
+            newUsername,
+            StringComparison.OrdinalIgnoreCase))
+        {
+            await using var checkDataSource = CreateDataSource();
+
+            if (await UsernameExistsAsync(checkDataSource, newUsername))
+            {
+                throw new InvalidOperationException(
+                    $"Username '{newUsername}' already exists.");
+            }
+        }
+
         await using var dataSource = CreateDataSource();
 
-        var unitId =
-            await FindUnitIdAsync(
-                dataSource,
-                request.Unit);
+        var unitId = await FindUnitIdAsync(dataSource, request.Unit);
 
-        await using var command =
-            dataSource.CreateCommand(
-                """
-                UPDATE public.users
-                SET
-                    nip       = @nip,
-                    finger_id = @fingerid,
-                    full_name = @fullname,
-                    email     = @email,
-                    unit_id   = @unitid,
-                    enabled   = @enabled
-                WHERE LOWER(username)=LOWER(@username);
-                """);
+        await using var command = dataSource.CreateCommand(
+            """
+            UPDATE public.users
+            SET
+                username  = @newusername,
+                nip       = @nip,
+                finger_id = @fingerid,
+                full_name = @fullname,
+                email     = @email,
+                unit_id   = @unitid,
+                enabled   = @enabled
+            WHERE LOWER(username)=LOWER(@username);
+            """);
 
+        command.Parameters.AddWithValue("newusername", newUsername);
         command.Parameters.AddWithValue(
             "nip",
-            string.IsNullOrWhiteSpace(request.Nip)
-                ? DBNull.Value
-                : request.Nip);
-
+            string.IsNullOrWhiteSpace(request.Nip) ? DBNull.Value : request.Nip);
         command.Parameters.AddWithValue(
             "fingerid",
-            string.IsNullOrWhiteSpace(request.FingerId)
-                ? DBNull.Value
-                : request.FingerId);
-
-        command.Parameters.AddWithValue(
-            "fullname",
-            request.FullName);
-
+            string.IsNullOrWhiteSpace(request.FingerId) ? DBNull.Value : request.FingerId);
+        command.Parameters.AddWithValue("fullname", request.FullName);
         command.Parameters.AddWithValue(
             "email",
-            string.IsNullOrWhiteSpace(request.Email)
-                ? DBNull.Value
-                : request.Email);
-
+            string.IsNullOrWhiteSpace(request.Email) ? DBNull.Value : request.Email);
         command.Parameters.AddWithValue(
             "unitid",
-            unitId is null
-                ? DBNull.Value
-                : unitId);
+            unitId is null ? DBNull.Value : unitId);
+        command.Parameters.AddWithValue("enabled", request.Enabled);
+        command.Parameters.AddWithValue("username", username);
 
-        command.Parameters.AddWithValue(
-            "enabled",
-            request.Enabled);
-
-        command.Parameters.AddWithValue(
-            "username",
-            username);
-
-        var affected =
-            await command.ExecuteNonQueryAsync();
+        var affected = await command.ExecuteNonQueryAsync();
 
         if (affected == 0)
         {
@@ -296,13 +254,28 @@ public sealed class PostgreSqlUserService : IUserService
                 $"User '{username}' not found.");
         }
 
-        // Keep downstream identity attributes aligned with BDIP.
-        await _ldapProvisioning.UpdateUserAsync(
+        // BDIP database is updated first. Then propagate the same identity
+        // change to the downstream identity/authentication stores.
+        if (!string.Equals(
             username,
+            newUsername,
+            StringComparison.OrdinalIgnoreCase))
+        {
+            await _ldapProvisioning.RenameUserAsync(
+                username,
+                newUsername);
+
+            await _radiusProvisioning.RenameUserAsync(
+                username,
+                newUsername);
+        }
+
+        await _ldapProvisioning.UpdateUserAsync(
+            newUsername,
             request);
 
         await _ldapProvisioning.UpdateUserStatusAsync(
-            username,
+            newUsername,
             new UpdateUserStatusRequest
             {
                 Enabled = request.Enabled
@@ -317,24 +290,17 @@ public sealed class PostgreSqlUserService : IUserService
 
         if (string.IsNullOrWhiteSpace(username))
         {
-            throw new InvalidOperationException(
-                "Username is required.");
+            throw new InvalidOperationException("Username is required.");
         }
 
         if (string.IsNullOrWhiteSpace(request.NewPassword))
         {
-            throw new InvalidOperationException(
-                "New password is required.");
+            throw new InvalidOperationException("New password is required.");
         }
 
         // Password reset originates in BDIP and is immediately propagated.
-        // The plaintext password is never stored in the BDIP database or in
-        // FreeRADIUS. LDAP stores the salted hash used by FreeRADIUS PAP.
-        await _ldapProvisioning.ResetPasswordAsync(
-            username,
-            request);
-
-        // Remove any legacy FreeRADIUS password so it cannot override LDAP.
+        // The plaintext password is never stored in BDIP or FreeRADIUS.
+        await _ldapProvisioning.ResetPasswordAsync(username, request);
         await _radiusProvisioning.ResetPasswordAsync(username);
     }
 
@@ -346,26 +312,19 @@ public sealed class PostgreSqlUserService : IUserService
 
         await using var dataSource = CreateDataSource();
 
-        await using var command =
-            dataSource.CreateCommand(
-                """
-                UPDATE public.users
-                SET
-                    enabled=@enabled,
-                    updated_at=NOW()
-                WHERE LOWER(username)=LOWER(@username);
-                """);
+        await using var command = dataSource.CreateCommand(
+            """
+            UPDATE public.users
+            SET
+                enabled=@enabled,
+                updated_at=NOW()
+            WHERE LOWER(username)=LOWER(@username);
+            """);
 
-        command.Parameters.AddWithValue(
-            "enabled",
-            request.Enabled);
+        command.Parameters.AddWithValue("enabled", request.Enabled);
+        command.Parameters.AddWithValue("username", username);
 
-        command.Parameters.AddWithValue(
-            "username",
-            username);
-
-        var rows =
-            await command.ExecuteNonQueryAsync();
+        var rows = await command.ExecuteNonQueryAsync();
 
         if (rows == 0)
         {
@@ -373,29 +332,22 @@ public sealed class PostgreSqlUserService : IUserService
                 $"User '{username}' not found.");
         }
 
-        await _ldapProvisioning.UpdateUserStatusAsync(
-            username,
-            request);
+        await _ldapProvisioning.UpdateUserStatusAsync(username, request);
     }
 
-    public async Task DeleteUserAsync(
-        string username)
+    public async Task DeleteUserAsync(string username)
     {
         await using var dataSource = CreateDataSource();
 
-        await using var command =
-            dataSource.CreateCommand(
-                """
-                DELETE FROM public.users
-                WHERE LOWER(username)=LOWER(@username);
-                """);
+        await using var command = dataSource.CreateCommand(
+            """
+            DELETE FROM public.users
+            WHERE LOWER(username)=LOWER(@username);
+            """);
 
-        command.Parameters.AddWithValue(
-            "username",
-            username);
+        command.Parameters.AddWithValue("username", username);
 
-        var rows =
-            await command.ExecuteNonQueryAsync();
+        var rows = await command.ExecuteNonQueryAsync();
 
         if (rows == 0)
         {
@@ -413,44 +365,37 @@ public sealed class PostgreSqlUserService : IUserService
         string unitName)
     {
         if (string.IsNullOrWhiteSpace(unitName))
-        {
             return null;
-        }
 
-        await using var command =
-            dataSource.CreateCommand(
-                """
-                SELECT id
-                FROM public.units
-                WHERE LOWER(name)=LOWER(@unit)
-                LIMIT 1;
-                """);
+        await using var command = dataSource.CreateCommand(
+            """
+            SELECT id
+            FROM public.units
+            WHERE LOWER(name)=LOWER(@unit)
+            LIMIT 1;
+            """);
 
         command.Parameters.AddWithValue("unit", unitName);
 
         var result = await command.ExecuteScalarAsync();
 
-        return result is Guid id
-            ? id
-            : null;
+        return result is Guid id ? id : null;
     }
 
     private async Task<bool> UsernameExistsAsync(
         NpgsqlDataSource dataSource,
         string username)
     {
-        await using var command =
-            dataSource.CreateCommand(
-                """
-                SELECT COUNT(*)
-                FROM public.users
-                WHERE LOWER(username)=LOWER(@username);
-                """);
+        await using var command = dataSource.CreateCommand(
+            """
+            SELECT COUNT(*)
+            FROM public.users
+            WHERE LOWER(username)=LOWER(@username);
+            """);
 
         command.Parameters.AddWithValue("username", username);
 
         var count = (long)(await command.ExecuteScalarAsync() ?? 0);
-
         return count > 0;
     }
 
@@ -460,19 +405,11 @@ public sealed class PostgreSqlUserService : IUserService
         {
             Uid = reader.GetString(0),
             Username = reader.GetString(0),
-            Nip = reader.IsDBNull(1)
-                ? string.Empty
-                : reader.GetString(1),
-            FingerId = reader.IsDBNull(2)
-                ? string.Empty
-                : reader.GetString(2),
+            Nip = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+            FingerId = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
             FullName = reader.GetString(3),
-            Email = reader.IsDBNull(4)
-                ? string.Empty
-                : reader.GetString(4),
-            Unit = reader.IsDBNull(5)
-                ? string.Empty
-                : reader.GetString(5),
+            Email = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+            Unit = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
             Enabled = reader.GetBoolean(6)
         };
     }
