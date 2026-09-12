@@ -14,7 +14,7 @@ import ImportUsersDialog from "./ImportUsersDialog";
 import {
   createUser,
   updateUser,
-} from "@/services/users.service"
+} from "@/services/users.service";
 import { defaultUserForm } from "@/constants/users";
 import { getUnits } from "@/services/unit.service";
 import {
@@ -92,12 +92,12 @@ export default function UsersClient({
     useState<DialogMode>("create");
   const [formData, setFormData] =
     useState<UserFormData>(defaultUserForm);
+  const [originalUsername, setOriginalUsername] = useState("");
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [units, setUnits] = useState<Unit[]>([]);
   const [policies, setPolicies] = useState<Policy[]>([]);
-  const [userRows, setUserRows] =
-  useState<User[]>(users);
+  const [userRows, setUserRows] = useState<User[]>(users);
 
   useEffect(() => {
     let active = true;
@@ -117,6 +117,7 @@ export default function UsersClient({
         }
       }
     }
+
     async function loadPolicies() {
       try {
         const response = await getNapPolicies();
@@ -132,17 +133,14 @@ export default function UsersClient({
         }
       }
     }
+
     async function loadUserNap() {
       try {
-        const response =
-          await getAllUserNap();
+        const response = await getAllUserNap();
 
         if (!active) return;
 
-        const map = new Map<
-          string,
-          UserNapInfo
-        >(
+        const map = new Map<string, UserNapInfo>(
           (response.data ?? []).map(
             (item: any) => [
               item.uid,
@@ -166,10 +164,7 @@ export default function UsersClient({
           }),
         );
       } catch (error) {
-        console.error(
-          "Load user NAP failed:",
-          error,
-        );
+        console.error("Load user NAP failed:", error);
       }
     }
 
@@ -252,6 +247,7 @@ export default function UsersClient({
       toast.success(`User "${username}" created successfully.`);
       setDialogOpen(false);
       setFormData(defaultUserForm);
+      setOriginalUsername("");
       window.location.reload();
     } catch (error) {
       console.error("Create user failed:", error);
@@ -268,6 +264,14 @@ export default function UsersClient({
     const fullName = formData.fullName.trim();
     const email = formData.email.trim();
     const unit = formData.unit.trim();
+    const oldUsername = originalUsername || username;
+
+    if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
+      toast.error(
+        "Username may only contain letters, numbers, dots, underscores, and hyphens.",
+      );
+      return;
+    }
 
     if (!fullName) {
       toast.error("Full name is required.");
@@ -287,7 +291,7 @@ export default function UsersClient({
     try {
       setSaving(true);
 
-      await updateUser(username, {
+      await updateUser(oldUsername, {
         uid: username,
         username,
         nip: formData.nip.trim(),
@@ -300,6 +304,7 @@ export default function UsersClient({
 
       toast.success(`User "${username}" updated successfully.`);
       setDialogOpen(false);
+      setOriginalUsername("");
       window.location.reload();
     } catch (error) {
       console.error("Update user failed:", error);
@@ -313,6 +318,7 @@ export default function UsersClient({
 
   function handleEditUser(user: User) {
     setDialogMode("edit");
+    setOriginalUsername(user.username);
     setFormData(userToFormData(user));
     setDialogOpen(true);
   }
@@ -326,13 +332,6 @@ export default function UsersClient({
     void handleCreateUser();
   }
 
-    console.log("UsersClient", {
-    users,
-    filteredUsers,
-    policies,
-  });
-
-
   return (
     <div className="space-y-6">
       <UserToolbar
@@ -342,6 +341,7 @@ export default function UsersClient({
         onImportCsv={() => setImportOpen(true)}
         onCreateUser={() => {
           setDialogMode("create");
+          setOriginalUsername("");
           setFormData(defaultUserForm);
           setDialogOpen(true);
         }}
@@ -383,7 +383,7 @@ export default function UsersClient({
             : "Save Changes"
         }
         showPasswordFields={dialogMode === "create"}
-        usernameReadOnly={dialogMode === "edit"}
+        usernameReadOnly={false}
       />
     </div>
   );
