@@ -11,6 +11,10 @@ public interface IRadiusProvisioningService
     Task ResetPasswordAsync(
         string username);
 
+    Task RenameUserAsync(
+        string username,
+        string newUsername);
+
     Task SyncPolicyAsync(
         Policy policy);
 
