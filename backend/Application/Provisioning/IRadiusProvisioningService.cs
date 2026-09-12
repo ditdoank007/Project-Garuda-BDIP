@@ -8,6 +8,9 @@ public interface IRadiusProvisioningService
     Task CreateUserAsync(
         CreateUserRequest request);
 
+    Task ResetPasswordAsync(
+        string username);
+
     Task SyncPolicyAsync(
         Policy policy);
 
@@ -22,5 +25,5 @@ public interface IRadiusProvisioningService
         string username);
 
     Task DeleteUserAsync(
-    string username);
+        string username);
 }
