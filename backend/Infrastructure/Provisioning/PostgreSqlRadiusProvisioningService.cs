@@ -46,8 +46,6 @@ public sealed class PostgreSqlRadiusProvisioningService
     {
         await using var dataSource = CreateDataSource();
 
-        // Remove any legacy per-user password from radcheck.
-        // FreeRADIUS will obtain the known-good password from LDAP.
         await using var command =
             dataSource.CreateCommand(
             """
@@ -61,11 +59,66 @@ public sealed class PostgreSqlRadiusProvisioningService
         await command.ExecuteNonQueryAsync();
     }
 
+    public async Task RenameUserAsync(
+        string username,
+        string newUsername)
+    {
+        if (string.Equals(
+            username,
+            newUsername,
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        await using var dataSource = CreateDataSource();
+
+        await using var transaction =
+            await dataSource.BeginTransactionAsync();
+
+        try
+        {
+            await using (var radcheck =
+                dataSource.CreateCommand(
+                """
+                UPDATE public.radcheck
+                SET username=@newusername
+                WHERE username=@username;
+                """))
+            {
+                radcheck.Transaction = transaction;
+                radcheck.Parameters.AddWithValue("username", username);
+                radcheck.Parameters.AddWithValue("newusername", newUsername);
+                await radcheck.ExecuteNonQueryAsync();
+            }
+
+            await using (var radusergroup =
+                dataSource.CreateCommand(
+                """
+                UPDATE public.radusergroup
+                SET username=@newusername
+                WHERE username=@username;
+                """))
+            {
+                radusergroup.Transaction = transaction;
+                radusergroup.Parameters.AddWithValue("username", username);
+                radusergroup.Parameters.AddWithValue("newusername", newUsername);
+                await radusergroup.ExecuteNonQueryAsync();
+            }
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
     public async Task SyncPolicyAsync(
         Policy policy)
     {
-        await using var dataSource =
-            CreateDataSource();
+        await using var dataSource = CreateDataSource();
 
         await using var command =
             dataSource.CreateCommand(
@@ -100,163 +153,80 @@ public sealed class PostgreSqlRadiusProvisioningService
             );
             """);
 
-        insert.Parameters.AddWithValue(
-            "groupname",
-            policy.Code);
-
-        insert.Parameters.AddWithValue(
-            "value",
-            policy.SessionTimeout.ToString());
-
+        insert.Parameters.AddWithValue("groupname", policy.Code);
+        insert.Parameters.AddWithValue("value", policy.SessionTimeout.ToString());
         await insert.ExecuteNonQueryAsync();
 
         if (policy.IdleTimeout > 0)
         {
-            await using var idle =
-                dataSource.CreateCommand(
+            await using var idle = dataSource.CreateCommand(
                 """
                 INSERT INTO public.radgroupreply
-                (
-                    groupname,
-                    attribute,
-                    op,
-                    value
-                )
-                VALUES
-                (
-                    @groupname,
-                    'Idle-Timeout',
-                    '=',
-                    @value
-                );
+                (groupname, attribute, op, value)
+                VALUES (@groupname, 'Idle-Timeout', '=', @value);
                 """);
 
-            idle.Parameters.AddWithValue(
-                "groupname",
-                policy.Code);
-
-            idle.Parameters.AddWithValue(
-                "value",
-                policy.IdleTimeout.ToString());
-
+            idle.Parameters.AddWithValue("groupname", policy.Code);
+            idle.Parameters.AddWithValue("value", policy.IdleTimeout.ToString());
             await idle.ExecuteNonQueryAsync();
         }
 
-        if (policy.DownloadRate > 0 ||
-            policy.UploadRate > 0)
+        if (policy.DownloadRate > 0 || policy.UploadRate > 0)
         {
-            await using var rate =
-                dataSource.CreateCommand(
+            await using var rate = dataSource.CreateCommand(
                 """
                 INSERT INTO public.radgroupreply
-                (
-                    groupname,
-                    attribute,
-                    op,
-                    value
-                )
-                VALUES
-                (
-                    @groupname,
-                    'Mikrotik-Rate-Limit',
-                    '=',
-                    @value
-                );
+                (groupname, attribute, op, value)
+                VALUES (@groupname, 'Mikrotik-Rate-Limit', '=', @value);
                 """);
 
-            rate.Parameters.AddWithValue(
-                "groupname",
-                policy.Code);
-
+            rate.Parameters.AddWithValue("groupname", policy.Code);
             rate.Parameters.AddWithValue(
                 "value",
                 $"{policy.DownloadRate}k/{policy.UploadRate}k");
-
             await rate.ExecuteNonQueryAsync();
         }
 
         if (!string.IsNullOrWhiteSpace(policy.IpPool))
         {
-            await using var pool =
-                dataSource.CreateCommand(
+            await using var pool = dataSource.CreateCommand(
                 """
                 INSERT INTO public.radgroupreply
-                (
-                    groupname,
-                    attribute,
-                    op,
-                    value
-                )
-                VALUES
-                (
-                    @groupname,
-                    'Framed-Pool',
-                    '=',
-                    @value
-                );
+                (groupname, attribute, op, value)
+                VALUES (@groupname, 'Framed-Pool', '=', @value);
                 """);
 
-            pool.Parameters.AddWithValue(
-                "groupname",
-                policy.Code);
-
-            pool.Parameters.AddWithValue(
-                "value",
-                policy.IpPool);
-
+            pool.Parameters.AddWithValue("groupname", policy.Code);
+            pool.Parameters.AddWithValue("value", policy.IpPool);
             await pool.ExecuteNonQueryAsync();
         }
 
         if (!string.IsNullOrWhiteSpace(policy.AddressList))
         {
-            await using var address =
-                dataSource.CreateCommand(
+            await using var address = dataSource.CreateCommand(
                 """
                 INSERT INTO public.radgroupreply
-                (
-                    groupname,
-                    attribute,
-                    op,
-                    value
-                )
-                VALUES
-                (
-                    @groupname,
-                    'Mikrotik-Address-List',
-                    '=',
-                    @value
-                );
+                (groupname, attribute, op, value)
+                VALUES (@groupname, 'Mikrotik-Address-List', '=', @value);
                 """);
 
-            address.Parameters.AddWithValue(
-                "groupname",
-                policy.Code);
-
-            address.Parameters.AddWithValue(
-                "value",
-                policy.AddressList);
-
+            address.Parameters.AddWithValue("groupname", policy.Code);
+            address.Parameters.AddWithValue("value", policy.AddressList);
             await address.ExecuteNonQueryAsync();
         }
     }
 
-    public async Task DeletePolicyAsync(
-        string policyCode)
+    public async Task DeletePolicyAsync(string policyCode)
     {
         await using var dataSource = CreateDataSource();
 
-        await using var reply =
-            dataSource.CreateCommand(
+        await using var reply = dataSource.CreateCommand(
             """
-            DELETE
-            FROM public.radgroupreply
+            DELETE FROM public.radgroupreply
             WHERE groupname=@groupname;
             """);
 
-        reply.Parameters.AddWithValue(
-            "groupname",
-            policyCode);
-
+        reply.Parameters.AddWithValue("groupname", policyCode);
         await reply.ExecuteNonQueryAsync();
     }
 
@@ -266,86 +236,54 @@ public sealed class PostgreSqlRadiusProvisioningService
     {
         await using var dataSource = CreateDataSource();
 
-        await using (var delete =
-            dataSource.CreateCommand(
+        await using (var delete = dataSource.CreateCommand(
             """
-            DELETE
-            FROM public.radusergroup
+            DELETE FROM public.radusergroup
             WHERE username=@username;
             """))
         {
-            delete.Parameters.AddWithValue(
-                "username",
-                username);
-
+            delete.Parameters.AddWithValue("username", username);
             await delete.ExecuteNonQueryAsync();
         }
 
-        await using (var insert =
-            dataSource.CreateCommand(
+        await using (var insert = dataSource.CreateCommand(
             """
             INSERT INTO public.radusergroup
-            (
-                username,
-                groupname,
-                priority
-            )
-            VALUES
-            (
-                @username,
-                @groupname,
-                1
-            );
+            (username, groupname, priority)
+            VALUES (@username, @groupname, 1);
             """))
         {
-            insert.Parameters.AddWithValue(
-                "username",
-                username);
-
-            insert.Parameters.AddWithValue(
-                "groupname",
-                policyCode);
-
+            insert.Parameters.AddWithValue("username", username);
+            insert.Parameters.AddWithValue("groupname", policyCode);
             await insert.ExecuteNonQueryAsync();
         }
     }
 
-    public async Task RemoveUserGroupAsync(
-        string username)
+    public async Task RemoveUserGroupAsync(string username)
     {
         await using var dataSource = CreateDataSource();
 
-        await using var command =
-            dataSource.CreateCommand(
+        await using var command = dataSource.CreateCommand(
             """
-            DELETE
-            FROM public.radusergroup
+            DELETE FROM public.radusergroup
             WHERE username=@username;
             """);
 
-        command.Parameters.AddWithValue(
-            "username",
-            username);
-
+        command.Parameters.AddWithValue("username", username);
         await command.ExecuteNonQueryAsync();
     }
 
-    public async Task DeleteUserAsync(
-        string username)
+    public async Task DeleteUserAsync(string username)
     {
         await using var dataSource = CreateDataSource();
 
-        await using var command =
-            dataSource.CreateCommand(
+        await using var command = dataSource.CreateCommand(
             """
             DELETE FROM public.radcheck
             WHERE username=@username;
             """);
 
-        command.Parameters.AddWithValue(
-            "username",
-            username);
-
+        command.Parameters.AddWithValue("username", username);
         await command.ExecuteNonQueryAsync();
     }
 }
