@@ -2,6 +2,7 @@ using BDIP.Application.AttendanceSynchronizationSchedule;
 using BDIP.Infrastructure.AttendanceSynchronizationSchedule;
 using BDIP.Application.Applications;
 using BDIP.Application.Auth;
+using BDIP.API.Middleware;
 using BDIP.Infrastructure.Applications;
 using BDIP.Infrastructure.Auth;
 using BDIP.Application.Users.Import;
@@ -237,6 +238,8 @@ if (app.Environment.IsDevelopment())
 // CORS harus berada sebelum authorization dan endpoint controller.
 // CORS harus berada sebelum authorization dan endpoint controller.
 app.UseCors(BdipFrontendCorsPolicy);
+
+app.UseMiddleware<GlobalAuthorizationMiddleware>();
 
 app.UseAuthorization();
 

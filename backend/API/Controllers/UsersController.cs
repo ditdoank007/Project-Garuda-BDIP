@@ -113,6 +113,42 @@ public class UsersController : ControllerBase
         });
     }
 
+    [HttpPut("{username}/email")]
+    public async Task<IActionResult> UpdateOwnEmail(
+        string username,
+        [FromBody] UpdateUserEmailRequest request)
+    {
+        var user = await _userService.GetUserByUsernameAsync(username);
+
+        if (user is null)
+        {
+            return NotFound(new
+            {
+                success = false,
+                message = "User not found."
+            });
+        }
+
+        await _userService.UpdateUserAsync(
+            username,
+            new UpdateUserRequest
+            {
+                Username = user.Username,
+                Nip = user.Nip,
+                FingerId = user.FingerId,
+                FullName = user.FullName,
+                Email = request.Email.Trim(),
+                Unit = user.Unit,
+                Enabled = user.Enabled
+            });
+
+        return Ok(new
+        {
+            success = true,
+            message = "Email updated successfully."
+        });
+    }
+
     [HttpPost("import/synology/execute")]
     public async Task<IActionResult> ExecuteSynologyImport(
         [FromBody] ExecuteSynologyUserImportRequest request)

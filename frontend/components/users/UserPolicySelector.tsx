@@ -13,12 +13,14 @@ interface UserPolicySelectorProps {
   user: User;
   policies: Policy[];
   initialPolicyId?: string;
+  readOnly?: boolean;
 }
 
 export default function UserPolicySelector({
   user,
   policies,
   initialPolicyId,
+  readOnly = false,
 }: UserPolicySelectorProps) {
   const [selectedPolicy, setSelectedPolicy] =
     useState(initialPolicyId ?? "");
@@ -68,6 +70,7 @@ export default function UserPolicySelector({
         onChange={(e) =>
           setSelectedPolicy(e.target.value)
         }
+        disabled={readOnly}
       >
         <option value="">
           -- Select Policy --
@@ -86,7 +89,7 @@ export default function UserPolicySelector({
       <Button
         size="sm"
         onClick={handleSave}
-        disabled={saving}
+        disabled={saving || readOnly}
       >
         {saving ? "Saving..." : "Save"}
       </Button>

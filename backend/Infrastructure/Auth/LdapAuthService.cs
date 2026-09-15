@@ -150,12 +150,6 @@ public class LdapAuthService : IAuthService
             }
         }
 
-        if (!isAdministrator)
-        {
-            throw new UnauthorizedAccessException(
-                "Access denied. Only BDIP Administrators are allowed to sign in.");
-        }
-
         var user = await _userService.GetUserByUsernameAsync(username);
 
 
@@ -166,7 +160,7 @@ public class LdapAuthService : IAuthService
             Email = user?.Email ?? entry.Attributes["mail"]?[0]?.ToString() ?? "",
             Nip = user?.Nip ?? "",
             FingerId = user?.FingerId ?? "",
-            Role = "Administrator"
+            Role = isAdministrator ? "Administrator" : "User"
         };
     }
 

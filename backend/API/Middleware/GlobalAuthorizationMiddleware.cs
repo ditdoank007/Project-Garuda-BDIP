@@ -127,6 +127,32 @@ public sealed class GlobalAuthorizationMiddleware
             return;
         }
 
+        // User biasa boleh mengubah email miliknya sendiri.
+        if (HttpMethods.IsPut(method) &&
+            path.StartsWith(
+                "/api/users/",
+                StringComparison.OrdinalIgnoreCase) &&
+            path.EndsWith(
+                "/email",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            const string prefix = "/api/users/";
+            const string suffix = "/email";
+
+            var username = path.Substring(
+                prefix.Length,
+                path.Length - prefix.Length - suffix.Length);
+
+            if (string.Equals(
+                    username,
+                    user.Username,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                await _next(context);
+                return;
+            }
+        }
+
         // User biasa hanya boleh reset password dirinya sendiri.
         if (HttpMethods.IsPost(method) &&
             path.StartsWith(
@@ -143,14 +169,42 @@ public sealed class GlobalAuthorizationMiddleware
                 prefix.Length,
                 path.Length - prefix.Length - suffix.Length);
 
-            if (string.Equals(
-                    username,
-                    user.Username,
+            if (!string.Equals(
+                    username.Trim(),
+                    user.Username.Trim(),
                     StringComparison.OrdinalIgnoreCase))
             {
-                await _next(context);
+                context.Response.StatusCode =
+                    StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    success = false,
+                    message = "Anda tidak mempunyai hak akses"
+                });
                 return;
             }
+
+            await _next(context);
+            return;
+        }
+
+        // User biasa tidak boleh mengubah NAP Policy.
+        if (HttpMethods.IsPut(method) &&
+            path.StartsWith(
+                "/api/nap/users/",
+                StringComparison.OrdinalIgnoreCase) &&
+            path.EndsWith(
+                "/policy",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.StatusCode =
+                StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                success = false,
+                message = "Anda tidak mempunyai hak akses"
+            });
+            return;
         }
 
         // Semua operasi write user biasa ditolak.

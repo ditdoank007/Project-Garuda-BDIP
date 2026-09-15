@@ -7,14 +7,30 @@ export async function api<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (options?.headers) {
+    const extraHeaders = new Headers(options.headers);
+    extraHeaders.forEach((value, key) => {
+      headers[key] = value;
+    });
+  }
+
+  if (
+    typeof window === "undefined" &&
+    process.env.BDIP_INTERNAL_API_SECRET
+  ) {
+    headers["X-BDIP-Internal-Secret"] =
+      process.env.BDIP_INTERNAL_API_SECRET;
+  }
+
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     cache: "no-store",
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options?.headers ?? {}),
-    },
+    headers,
   });
 
   if (!response.ok) {

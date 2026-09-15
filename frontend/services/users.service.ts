@@ -52,6 +52,16 @@ export async function updateUser(
   );
 }
 
+export async function updateUserEmail(
+  username: string,
+  email: string,
+) {
+  return apiPut(
+    `/users/${encodeURIComponent(username)}/email`,
+    { email },
+  );
+}
+
 export async function updateUserStatus(
   username: string,
   enabled: boolean,

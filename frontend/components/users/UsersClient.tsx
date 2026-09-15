@@ -9,11 +9,13 @@ import useDebounce from "@/hooks/useDebounce";
 import UserToolbar from "./UserToolbar";
 import UserTable from "./UserTable";
 import UserDialog from "./UserDialog";
+import { getCurrentUser } from "@/services/auth.service";
 import ImportUsersDialog from "./ImportUsersDialog";
 
 import {
   createUser,
   updateUser,
+  updateUserEmail,
 } from "@/services/users.service";
 import { defaultUserForm } from "@/constants/users";
 import { getUnits } from "@/services/unit.service";
@@ -102,6 +104,22 @@ export default function UsersClient({
   const [units, setUnits] = useState<Unit[]>([]);
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [userRows, setUserRows] = useState<User[]>(users);
+  const [currentUserRole, setCurrentUserRole] = useState("");
+  const [currentUsername, setCurrentUsername] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    getCurrentUser().then((user) => {
+      if (!active || !user) return;
+      setCurrentUserRole(user.role);
+      setCurrentUsername(user.username);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -248,7 +266,7 @@ export default function UsersClient({
         unit,
       });
 
-      toast.success(`User "${username}" created successfully.`);
+      window.dispatchEvent(new CustomEvent("bdip:authorization-success"));
       setDialogOpen(false);
       setFormData(defaultUserForm);
       setOriginalUsername("");
@@ -306,7 +324,7 @@ export default function UsersClient({
         enabled: formData.enabled,
       });
 
-      toast.success(`User "${username}" updated successfully.`);
+      window.dispatchEvent(new CustomEvent("bdip:authorization-success"));
       setDialogOpen(false);
       setOriginalUsername("");
       window.location.reload();
@@ -314,6 +332,55 @@ export default function UsersClient({
       console.error("Update user failed:", error);
       toast.error(
         getErrorMessage(error, "Failed to update user."),
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleUpdateOwnEmail() {
+    const email = formData.email.trim();
+
+    if (!email) {
+      toast.error("Email is required.");
+      return;
+    }
+
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
+      toast.error("Enter a valid email address.");
+      return;
+    }
+
+    if (
+      !currentUsername ||
+      formData.username.toLowerCase() !==
+        currentUsername.toLowerCase()
+    ) {
+      toast.error("You can only edit your own email.");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      await updateUserEmail(currentUsername, email);
+
+      setUserRows((rows) =>
+        rows.map((row) =>
+          row.username.toLowerCase() ===
+          currentUsername.toLowerCase()
+            ? { ...row, email }
+            : row,
+        ),
+      );
+
+      window.dispatchEvent(new CustomEvent("bdip:authorization-success"));
+      setDialogOpen(false);
+    } catch (error) {
+      toast.error(
+        getErrorMessage(error, "Failed to update email."),
       );
     } finally {
       setSaving(false);
@@ -329,6 +396,13 @@ export default function UsersClient({
 
   function handleDialogSave() {
     if (dialogMode === "edit") {
+      if (
+        currentUserRole.toLowerCase() !== "administrator"
+      ) {
+        void handleUpdateOwnEmail();
+        return;
+      }
+
       void handleUpdateUser();
       return;
     }
@@ -392,7 +466,28 @@ export default function UsersClient({
             : "Save Changes"
         }
         showPasswordFields={dialogMode === "create"}
-        usernameReadOnly={false}
+        readOnly={
+          dialogMode === "edit" &&
+          currentUserRole.toLowerCase() !== "administrator" &&
+          currentUsername.trim().toLowerCase() !== formData.username.trim().toLowerCase()
+        }
+        usernameReadOnly={
+          dialogMode === "edit" &&
+          currentUserRole.toLowerCase() !== "administrator"
+        }
+        selfEmailOnly={
+          dialogMode === "edit" &&
+          currentUserRole.toLowerCase() !== "administrator" &&
+          currentUsername.trim().toLowerCase() === formData.username.trim().toLowerCase()
+        }
+        showSave={
+          dialogMode === "create" ||
+          currentUserRole.toLowerCase() === "administrator" ||
+          (
+            dialogMode === "edit" &&
+            currentUsername.trim().toLowerCase() === formData.username.trim().toLowerCase()
+          )
+        }
       />
     </div>
   );

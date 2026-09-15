@@ -254,32 +254,6 @@ public sealed class PostgreSqlUserService : IUserService
                 $"User '{username}' not found.");
         }
 
-        // BDIP database is updated first. Then propagate the same identity
-        // change to the downstream identity/authentication stores.
-        if (!string.Equals(
-            username,
-            newUsername,
-            StringComparison.OrdinalIgnoreCase))
-        {
-            await _ldapProvisioning.RenameUserAsync(
-                username,
-                newUsername);
-
-            await _radiusProvisioning.RenameUserAsync(
-                username,
-                newUsername);
-        }
-
-        await _ldapProvisioning.UpdateUserAsync(
-            newUsername,
-            request);
-
-        await _ldapProvisioning.UpdateUserStatusAsync(
-            newUsername,
-            new UpdateUserStatusRequest
-            {
-                Enabled = request.Enabled
-            });
     }
 
     public async Task ResetPasswordAsync(

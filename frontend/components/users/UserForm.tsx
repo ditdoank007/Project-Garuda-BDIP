@@ -14,6 +14,7 @@ interface UserFormProps {
   onChange?: (user: UserFormData) => void;
   showPasswordFields?: boolean;
   usernameReadOnly?: boolean;
+  selfEmailOnly?: boolean;
 }
 
 export default function UserForm({
@@ -23,6 +24,7 @@ export default function UserForm({
   onChange,
   showPasswordFields = true,
   usernameReadOnly = false,
+  selfEmailOnly = false,
 }: UserFormProps) {
   function updateField(
     field: keyof UserFormData,
@@ -36,7 +38,8 @@ export default function UserForm({
     });
   }
 
-  const inputReadOnly = readOnly || usernameReadOnly;
+  const inputReadOnly = readOnly || usernameReadOnly || selfEmailOnly;
+  const fieldReadOnly = readOnly || selfEmailOnly;
 
   return (
     <div className="grid grid-cols-2 gap-4 py-4">
@@ -56,7 +59,7 @@ export default function UserForm({
         <Label>NIP</Label>
         <Input
           value={user.nip}
-          readOnly={readOnly}
+          readOnly={fieldReadOnly}
           placeholder="NIP (untuk non-PNS gunakan FingerID)"
           onChange={(e) =>
             updateField("nip", e.target.value)
@@ -68,7 +71,7 @@ export default function UserForm({
         <Label>FingerID</Label>
         <Input
           value={user.fingerId}
-          readOnly={readOnly}
+          readOnly={fieldReadOnly}
           placeholder="FingerID"
           onChange={(e) =>
             updateField("fingerId", e.target.value)
@@ -80,7 +83,7 @@ export default function UserForm({
         <Label>Full Name</Label>
         <Input
           value={user.fullName}
-          readOnly={readOnly}
+          readOnly={fieldReadOnly}
           placeholder="Full Name"
           onChange={(e) =>
             updateField("fullName", e.target.value)
@@ -104,7 +107,7 @@ export default function UserForm({
       <div className="space-y-2">
         <Label>Unit</Label>
 
-        {readOnly ? (
+        {readOnly || selfEmailOnly ? (
           <Input
             value={user.unit}
             readOnly

@@ -8,6 +8,16 @@ export default function GlobalFeedbackDialog() {
   const [type, setType] = useState<FeedbackType | null>(null);
 
   useEffect(() => {
+    if (!type) return;
+
+    const timer = window.setTimeout(() => {
+      setType(null);
+    }, 2500);
+
+    return () => window.clearTimeout(timer);
+  }, [type]);
+
+  useEffect(() => {
     const showDenied = () => {
       setType("denied");
     };
@@ -119,12 +129,12 @@ export default function GlobalFeedbackDialog() {
 
         <p className="mt-2 text-sm text-gray-600">
           {isSuccess ? (
-            "Perubahan password berhasil dilakukan."
+            "Perubahan berhasil dilakukan."
           ) : (
             <>
-              Anda tidak mempunyai akses untuk mengubah.
+              Anda tidak mempunyai hak akses.
               <br />
-              Hubungi Administrator.
+              
             </>
           )}
         </p>

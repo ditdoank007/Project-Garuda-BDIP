@@ -35,6 +35,7 @@ export default function RootLayout({
       className="h-full overflow-hidden flex flex-col font-sans"
     >
         <AppShell>{children}</AppShell>
+        <GlobalFeedbackDialog />
         <Toaster richColors position="top-right" />
       </body>
     </html>

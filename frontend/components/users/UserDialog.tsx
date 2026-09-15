@@ -26,6 +26,8 @@ interface UserDialogProps {
   saveLabel?: string;
   showPasswordFields?: boolean;
   usernameReadOnly?: boolean;
+  selfEmailOnly?: boolean;
+  showSave?: boolean;
 }
 
 export default function UserDialog({
@@ -41,6 +43,8 @@ export default function UserDialog({
   saveLabel = "Create User",
   showPasswordFields = true,
   usernameReadOnly = false,
+  selfEmailOnly = false,
+  showSave = true,
 }: UserDialogProps) {
   function handleSave() {
     if (!saving) {
@@ -62,9 +66,10 @@ export default function UserDialog({
           onChange={onChange}
           showPasswordFields={showPasswordFields}
           usernameReadOnly={usernameReadOnly}
+          selfEmailOnly={selfEmailOnly}
         />
 
-        {!readOnly && (
+        {!readOnly && showSave && (
           <DialogFooter>
             <Button
               type="button"

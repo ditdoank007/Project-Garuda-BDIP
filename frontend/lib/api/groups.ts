@@ -11,9 +11,19 @@ const API_URL =
     ? (process.env.BDIP_INTERNAL_API_URL ?? "http://backend:8080/api")
     : (process.env.NEXT_PUBLIC_API_URL ?? "/api");
 
+const API_HEADERS =
+  typeof window === "undefined" &&
+  process.env.BDIP_INTERNAL_API_SECRET
+    ? {
+        "X-BDIP-Internal-Secret":
+          process.env.BDIP_INTERNAL_API_SECRET,
+      }
+    : {};
+
 export async function getGroups(): Promise<Group[]> {
   const response = await axios.get<Group[]>(
     `${API_URL}/groups`,
+    { headers: API_HEADERS },
   );
 
   return response.data;
@@ -24,6 +34,7 @@ export async function getGroup(
 ): Promise<Group> {
   const response = await axios.get<Group>(
     `${API_URL}/groups/${encodeURIComponent(groupName)}`,
+    { headers: API_HEADERS },
   );
 
   return response.data;
