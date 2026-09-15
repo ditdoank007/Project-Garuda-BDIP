@@ -149,19 +149,19 @@ export default function UserTable({
 
   return (
     <>
-      <div className="rounded-md border">
-        <Table>
+      <div className="h-full min-h-0 overflow-auto rounded-md border">
+        <Table containerClassName="overflow-visible">
           <TableHeader>
             <TableRow>
-              <TableHead>Username</TableHead>
-              <TableHead>NIP</TableHead>
-              <TableHead>FingerID</TableHead>
-              <TableHead>Full Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Unit</TableHead>
-              <TableHead>NAP Policy</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-20 text-right">
+              <TableHead className="sticky top-0 z-20 bg-white">Username</TableHead>
+              <TableHead className="sticky top-0 z-20 bg-white">NIP</TableHead>
+              <TableHead className="sticky top-0 z-20 bg-white">FingerID</TableHead>
+              <TableHead className="sticky top-0 z-20 bg-white">Full Name</TableHead>
+              <TableHead className="sticky top-0 z-20 bg-white">Email</TableHead>
+              <TableHead className="sticky top-0 z-20 bg-white">Unit</TableHead>
+              <TableHead className="sticky top-0 z-20 bg-white">NAP Policy</TableHead>
+              <TableHead className="sticky top-0 z-20 bg-white">Status</TableHead>
+              <TableHead className="sticky top-0 z-20 w-20 bg-white text-right">
                 Actions
               </TableHead>
             </TableRow>
@@ -182,33 +182,44 @@ export default function UserTable({
                 const isUpdating =
                   updatingUsername === user.username;
 
+                const dataClass = (value?: string | null) =>
+                  value?.trim()
+                    ? "bdip-data-complete"
+                    : "bdip-data-incomplete";
+
+                const policyClass = user.policyId
+                  ? "bdip-data-complete"
+                  : "bdip-data-incomplete";
+
                 return (
                   <TableRow key={user.uid}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium bdip-data-complete">
                       {user.username}
                     </TableCell>
 
-                    <TableCell>
+                    <TableCell className={dataClass(user.nip)}>
                       {user.nip || "-"}
                     </TableCell>
 
-                    <TableCell>
+                    <TableCell className={dataClass(user.fingerId)}>
                       {user.fingerId || "-"}
                     </TableCell>
 
-                    <TableCell>
+                    <TableCell className={dataClass(user.fullName)}>
                       {user.fullName || "-"}
                     </TableCell>
 
-                    <TableCell>
+                    <TableCell className={dataClass(user.email)}>
                       {user.email || "-"}
                     </TableCell>
 
-                    <TableCell>
+                    <TableCell className={dataClass(user.unit)}>
                       {user.unit || "-"}
                     </TableCell>
 
-                    <TableCell className="min-w-[260px]">
+                    <TableCell
+                      className={`min-w-[260px] ${policyClass}`}
+                    >
                       <UserPolicySelector
                         user={user}
                         policies={policies}

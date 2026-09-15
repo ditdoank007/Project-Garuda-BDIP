@@ -1,4 +1,3 @@
-import AppShell from "@/components/layout/AppShell";
 import StatsCard from "@/components/dashboard/StatsCard";
 import HealthCard from "@/components/dashboard/HealthCard";
 import ActivityCard from "@/components/dashboard/ActivityCard";
@@ -18,8 +17,7 @@ export default async function DashboardPage() {
   const dashboard = await getDashboard();
 
   return (
-    <AppShell>
-
+    <>
       <WelcomeBanner />
 
       <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
@@ -65,7 +63,6 @@ export default async function DashboardPage() {
         <ActivityCard />
 
       </div>
-
-    </AppShell>
+    </>
   );
 }

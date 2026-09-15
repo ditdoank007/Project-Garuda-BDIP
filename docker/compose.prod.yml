@@ -60,6 +60,8 @@ services:
 
   backend:
     container_name: bdip-backend
+    dns:
+      - 192.168.100.100
     env_file:
       - backend-db.env
       - ../backend-synology.env

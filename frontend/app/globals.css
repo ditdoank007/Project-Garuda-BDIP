@@ -135,3 +135,18 @@
   }
 
 }
+
+/* ============================================================
+   BDIP Global Data Completeness
+   Complete data = normal foreground
+   Incomplete data = destructive/red
+   ============================================================ */
+
+@utility bdip-data-complete {
+  color: var(--foreground);
+}
+
+@utility bdip-data-incomplete {
+  color: var(--destructive) !important;
+  font-weight: 500;
+}

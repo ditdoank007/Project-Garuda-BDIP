@@ -316,7 +316,7 @@ export default function RolesClient({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
@@ -515,20 +515,30 @@ export default function RolesClient({
           </div>
         </div>
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Role</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Members</TableHead>
-              <TableHead className="text-right">
-                Actions
-              </TableHead>
-            </TableRow>
-          </TableHeader>
+        <div className="min-h-0 flex-1 overflow-auto">
+          <Table
+            containerClassName="overflow-visible"
+            className="min-w-[760px]"
+          >
+            <TableHeader>
+              <TableRow>
+                <TableHead className="sticky top-0 z-20 bg-white">
+                  Role
+                </TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white">
+                  Description
+                </TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white">
+                  Members
+                </TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white text-right">
+                  Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
 
-          <TableBody>
-            {filteredRoles.length === 0 ? (
+            <TableBody>
+              {filteredRoles.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={4}
@@ -602,9 +612,10 @@ export default function RolesClient({
                   </TableCell>
                 </TableRow>
               ))
-            )}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <RoleMembersDialog

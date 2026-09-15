@@ -1,5 +1,3 @@
-import { CalendarDays, LogIn, Moon } from "lucide-react";
-import Link from "next/link";
 import KpiCard from "./KpiCard";
 import GaugeCard from "@/components/dashboard/GaugeCard";
 import SynologyStorageCard from "@/components/dashboard/SynologyStorageCard";
@@ -72,43 +70,7 @@ export default async function LandingPage() {
 
   return (
     <main className="min-h-screen bg-[#08111f] text-white">
-      {/* Header */}
-      <header className="border-b border-slate-800">
-        <div className="mx-auto flex max-w-[1800px] items-center justify-between px-8 py-5">
-          <div>
-            <h1 className="text-3xl font-bold tracking-wide">
-              BASARNAS DIGITAL IDENTITY PLATFORM (BDIP)
-            </h1>
-
-            <p className="mt-1 text-slate-400">
-              Kantor Pencarian dan Pertolongan Surabaya
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2">
-              <CalendarDays className="h-4 w-4" />
-              {`Today (${new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "long", year: "numeric" }).format(new Date())})`}
-            </button>
-
-            <Link
-              href="/login"
-              className="rounded-lg bg-blue-600 px-6 py-2 font-semibold hover:bg-blue-700"
-            >
-              <span className="flex items-center gap-2">
-                <LogIn className="h-4 w-4" />
-                LOGIN
-              </span>
-            </Link>
-
-            <button className="rounded-lg border border-slate-700 bg-slate-900 p-2">
-              <Moon className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
+      {/* Monitoring Content */}
 
       <div className="mx-auto max-w-[1800px] px-8 pt-8 pb-6">
         <div className="grid gap-6 lg:grid-cols-3 xl:grid-cols-6">

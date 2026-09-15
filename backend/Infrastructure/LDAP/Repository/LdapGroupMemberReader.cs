@@ -7,9 +7,6 @@ namespace BDIP.Infrastructure.LDAP.Repository;
 
 public class LdapGroupMemberReader : IGroupMemberReader
 {
-    private const string DummyMemberDn =
-        "cn=dummy,dc=basarnas,dc=go,dc=id";
-
     private readonly ILdapConnectionFactory _ldap;
     private readonly LdapOptions _options;
 
@@ -63,7 +60,7 @@ public class LdapGroupMemberReader : IGroupMemberReader
 
             if (string.Equals(
                 memberDn,
-                DummyMemberDn,
+                _options.PlaceholderMemberDn,
                 StringComparison.OrdinalIgnoreCase))
             {
                 continue;

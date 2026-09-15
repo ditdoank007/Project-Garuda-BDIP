@@ -1,4 +1,3 @@
-import AppShell from "@/components/layout/AppShell";
 import ApplicationsClient from "@/components/applications/ApplicationsClient";
 
 import { getApplications } from "@/services/application.service";
@@ -9,10 +8,8 @@ export default async function ApplicationsPage() {
   const response = await getApplications();
 
   return (
-    <AppShell>
-      <ApplicationsClient
+    <ApplicationsClient
         applications={response.data}
       />
-    </AppShell>
   );
 }

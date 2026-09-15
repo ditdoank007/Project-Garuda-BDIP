@@ -4,6 +4,14 @@ import { Eye, Pencil, Trash2, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 import type { Group } from "@/types/groups";
 
@@ -44,43 +52,51 @@ export default function GroupTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border">
-      <div className="max-h-[calc(100vh-19rem)] overflow-auto">
-        <table className="w-full min-w-[1040px] text-sm">
-          <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
-            <tr className="border-b text-left">
-              <th className="px-4 py-3 font-medium">Group</th>
-              <th className="px-4 py-3 font-medium">Description</th>
-              <th className="px-4 py-3 font-medium">Members</th>
-              <th className="px-4 py-3 font-medium">GID</th>
-              <th className="px-4 py-3 font-medium">Distinguished Name</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
+    <div className="min-h-0 flex-1 overflow-auto rounded-lg border">
+      <Table containerClassName="overflow-visible">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="sticky top-0 z-20 bg-white">
+              Group
+            </TableHead>
+            <TableHead className="sticky top-0 z-20 bg-white">
+              Description
+            </TableHead>
+            <TableHead className="sticky top-0 z-20 bg-white">
+              Members
+            </TableHead>
+            <TableHead className="sticky top-0 z-20 bg-white">
+              GID
+            </TableHead>
+            <TableHead className="sticky top-0 z-20 bg-white">
+              Distinguished Name
+            </TableHead>
+            <TableHead className="sticky top-0 z-20 bg-white text-right">
+              Actions
+            </TableHead>
+          </TableRow>
+        </TableHeader>
 
-          <tbody>
+        <TableBody>
             {groups.map((group) => {
               const hasMembers = group.memberCount > 0;
 
               return (
-                <tr
-                  key={group.name}
-                  className="border-b last:border-b-0 hover:bg-muted/40"
-                >
-                  <td className="px-4 py-3 align-top">
+                <TableRow key={group.name}>
+                  <TableCell className="align-top">
                     <p className="font-medium">{group.name}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Created {group.createdAt || "-"}
                     </p>
-                  </td>
+                  </TableCell>
 
-                  <td className="max-w-[260px] px-4 py-3 align-top text-muted-foreground">
+                  <TableCell className="max-w-[260px] align-top text-muted-foreground">
                     <span className="line-clamp-2">
                       {group.description || "-"}
                     </span>
-                  </td>
+                  </TableCell>
 
-                  <td className="px-4 py-3 align-top">
+                  <TableCell className="align-top">
                     <Badge
                       variant={hasMembers ? "default" : "secondary"}
                       className="gap-1"
@@ -88,24 +104,24 @@ export default function GroupTable({
                       <Users className="h-3.5 w-3.5" />
                       {group.memberCount}
                     </Badge>
-                  </td>
+                  </TableCell>
 
-                  <td className="px-4 py-3 align-top font-mono text-xs">
+                  <TableCell className="align-top font-mono text-xs">
                     {group.gidNumber > 0 ? (
                   group.gidNumber
                 ) : (
                   <span className="text-muted-foreground">Not assigned</span>
                 )}
-                  </td>
+                  </TableCell>
 
-                  <td
-                    className="max-w-[300px] px-4 py-3 align-top font-mono text-xs text-muted-foreground"
+                  <TableCell
+                    className="max-w-[300px] align-top font-mono text-xs text-muted-foreground"
                     title={group.distinguishedName}
                   >
                     {shortDn(group.distinguishedName)}
-                  </td>
+                  </TableCell>
 
-                  <td className="px-4 py-3 align-top">
+                  <TableCell className="align-top">
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
@@ -157,13 +173,12 @@ export default function GroupTable({
                         <span className="ml-2">Delete</span>
                       </Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
     </div>
   );
 }

@@ -6,6 +6,8 @@ import { Logo } from "../common";
 
 import {
   LayoutDashboard,
+  Activity,
+  CalendarDays,
   Users,
   UsersRound,
   Building2,
@@ -120,6 +122,19 @@ export default function Sidebar() {
     <aside className="w-72 bg-slate-900 text-white shadow-xl">
       <div className="border-b border-slate-800 p-6">
         <Logo />
+
+        <div className="mt-4 flex items-center gap-2 border-t border-slate-800 pt-4 text-xs text-slate-400">
+          <CalendarDays size={15} />
+          <span>
+            Today (
+            {new Intl.DateTimeFormat("en-GB", {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            }).format(new Date())}
+            )
+          </span>
+        </div>
       </div>
 
       <nav className="mt-4">
@@ -133,6 +148,18 @@ export default function Sidebar() {
         >
           <LayoutDashboard size={20} />
           <span>Dashboard</span>
+        </Link>
+
+        <Link
+          href="/monitoring"
+          className={`mx-3 mb-1 flex items-center gap-3 rounded-lg px-4 py-3 transition ${
+            pathname === "/monitoring"
+              ? "bg-slate-800 text-white"
+              : "hover:bg-slate-800"
+          }`}
+        >
+          <Activity size={20} />
+          <span>Monitoring</span>
         </Link>
 
         <div className="mx-3 mt-1">

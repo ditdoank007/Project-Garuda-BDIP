@@ -79,6 +79,11 @@ export default function ResetPasswordDialog({
       }
 
       toast.success(`Password for "${user.username}" reset successfully.`);
+
+      window.dispatchEvent(
+        new CustomEvent("bdip:authorization-success"),
+      );
+
       onOpenChange(false);
     } catch (error) {
       console.error("Reset password failed:", error);
@@ -111,6 +116,7 @@ export default function ResetPasswordDialog({
             <Input
               id="new-password"
               type="password"
+              autoComplete="new-password"
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
               disabled={saving}
@@ -122,6 +128,7 @@ export default function ResetPasswordDialog({
             <Input
               id="confirm-password"
               type="password"
+              autoComplete="new-password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               disabled={saving}

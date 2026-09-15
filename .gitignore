@@ -115,3 +115,7 @@ backend-synology.env
 
 # BDIP OpenLDAP runtime secret
 docker/openldap.env
+
+# Local patch/config backups
+*.before-*
+internal-api.env

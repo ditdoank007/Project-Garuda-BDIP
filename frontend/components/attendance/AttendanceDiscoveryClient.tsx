@@ -11,6 +11,14 @@ import type {
   AttendanceDiscoveryResponse,
   AttendanceDiscoveryUser,
 } from "@/types/attendance";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Props {
   machines: FingerMachine[];
@@ -214,7 +222,7 @@ export default function AttendanceDiscoveryClient({ machines }: Props) {
   }
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
       <div className="border-b border-gray-200 px-6 py-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -296,7 +304,7 @@ export default function AttendanceDiscoveryClient({ machines }: Props) {
             />
           </div>
 
-          <div className="border-t border-gray-200">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-t border-gray-200">
             <div className="flex flex-col gap-3 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="font-medium text-gray-900">
@@ -386,32 +394,35 @@ export default function AttendanceDiscoveryClient({ machines }: Props) {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="w-12 px-4 py-3 text-center">
+            <div className="min-h-0 flex-1 overflow-auto">
+              <Table
+                containerClassName="overflow-visible"
+                className="min-w-[900px]"
+              >
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="sticky top-0 z-20 bg-gray-50 w-12 text-center">
                       <span className="sr-only">Pilih</span>
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    </TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-gray-50">
                       FingerID
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    </TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-gray-50">
                       Nama Mesin
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    </TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-gray-50">
                       Nama BDIP
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    </TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
                       Fingerprint
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    </TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
                       Status
-                    </th>
-                  </tr>
-                </thead>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
 
-                <tbody className="divide-y divide-gray-100 bg-white">
+                <TableBody>
                   {result.users.map((user) => (
                     <DiscoveryRow
                       key={`${user.fingerId}-${user.deviceUid}`}
@@ -420,8 +431,8 @@ export default function AttendanceDiscoveryClient({ machines }: Props) {
                       onToggle={() => toggleFingerId(user.fingerId)}
                     />
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         </>
@@ -462,33 +473,33 @@ function DiscoveryRow({
   onToggle: () => void;
 }) {
   return (
-    <tr className={user.isMatched ? "" : "bg-amber-50/40"}>
-      <td className="px-4 py-3 text-center">
+    <TableRow className={user.isMatched ? "" : "bg-amber-50/40"}>
+      <TableCell className="px-4 py-3 text-center">
         <input
           type="checkbox"
           checked={selected}
           onChange={onToggle}
           className="h-4 w-4 rounded border-gray-300"
         />
-      </td>
+      </TableCell>
 
-      <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
+      <TableCell className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
         {user.fingerId}
-      </td>
+      </TableCell>
 
-      <td className="px-4 py-3 text-sm text-gray-700">
+      <TableCell className="px-4 py-3 text-sm text-gray-700">
         {user.deviceName || "-"}
-      </td>
+      </TableCell>
 
-      <td className="px-4 py-3 text-sm text-gray-700">
+      <TableCell className="px-4 py-3 text-sm text-gray-700">
         {user.bdipFullName || "-"}
-      </td>
+      </TableCell>
 
-      <td className="px-4 py-3 text-center text-sm text-gray-700">
+      <TableCell className="px-4 py-3 text-center text-sm text-gray-700">
         {user.templateCount}
-      </td>
+      </TableCell>
 
-      <td className="px-4 py-3 text-center">
+      <TableCell className="px-4 py-3 text-center">
         {user.isMatched ? (
           <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
             Sudah Terdaftar
@@ -498,7 +509,7 @@ function DiscoveryRow({
             User Baru
           </span>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }

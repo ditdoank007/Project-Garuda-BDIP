@@ -9,6 +9,14 @@ import {
 import type { AttendanceMasterUser } from "@/types/attendance";
 import type { User } from "@/types/users";
 import { getUsers } from "@/services/users.service";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function AttendanceMasterClient() {
   const [users, setUsers] = useState<AttendanceMasterUser[]>([]);
@@ -205,7 +213,7 @@ export default function AttendanceMasterClient() {
   }
 
   return (
-    <section className="space-y-6">
+    <section className="flex h-full min-h-0 flex-col space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-gray-900">
           Master Attendance
@@ -260,88 +268,90 @@ export default function AttendanceMasterClient() {
         />
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  FingerID
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Nama Lengkap
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  NIP
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Fingerprint
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Status BDIP
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Mesin
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Status Mesin
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
+      <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-gray-200 bg-white">
+        <Table
+          containerClassName="overflow-visible"
+          className="min-w-[1100px]"
+        >
+          <TableHeader>
+            <TableRow>
+              <TableHead className="sticky top-0 z-20 bg-gray-50">
+                FingerID
+              </TableHead>
+              <TableHead className="sticky top-0 z-20 bg-gray-50">
+                Nama Lengkap
+              </TableHead>
+              <TableHead className="sticky top-0 z-20 bg-gray-50">
+                NIP
+              </TableHead>
+              <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
+                Fingerprint
+              </TableHead>
+              <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
+                Status BDIP
+              </TableHead>
+              <TableHead className="sticky top-0 z-20 bg-gray-50">
+                Mesin
+              </TableHead>
+              <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
+                Status Mesin
+              </TableHead>
+              <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
+                Aksi
+              </TableHead>
+            </TableRow>
+          </TableHeader>
 
-            <tbody className="divide-y divide-gray-100 bg-white">
+          <TableBody>
               {loading ? (
-                <tr>
-                  <td
+                <TableRow>
+                  <TableCell
                     colSpan={8}
                     className="px-4 py-10 text-center text-sm text-gray-500"
                   >
                     Memuat Master Attendance...
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : filteredUsers.length === 0 ? (
-                <tr>
-                  <td
+                <TableRow>
+                  <TableCell
                     colSpan={8}
                     className="px-4 py-10 text-center text-sm text-gray-500"
                   >
                     Data tidak ditemukan.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr
+                  <TableRow
                     key={`${user.fingerId}-${user.userId}`}
                     className="hover:bg-gray-50"
                   >
-                    <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
+                    <TableCell className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
                       {user.fingerId}
-                    </td>
+                    </TableCell>
 
-                    <td className="px-4 py-3 text-sm text-gray-900">
+                    <TableCell className="px-4 py-3 text-sm text-gray-900">
                       {user.fullName}
-                    </td>
+                    </TableCell>
 
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
+                    <TableCell className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
                       {user.nip || "-"}
-                    </td>
+                    </TableCell>
 
-                    <td className="px-4 py-3 text-center text-sm text-gray-700">
+                    <TableCell className="px-4 py-3 text-center text-sm text-gray-700">
                       {user.fingerprintCount}
-                    </td>
+                    </TableCell>
 
-                    <td className="px-4 py-3 text-center">
+                    <TableCell className="px-4 py-3 text-center">
                       <StatusBadge
                         active={user.userEnabled}
                         activeText="Aktif"
                         inactiveText="Nonaktif"
                       />
-                    </td>
+                    </TableCell>
 
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <TableCell className="px-4 py-3 text-sm text-gray-700">
                       {user.machines.length === 0 ? (
                         "-"
                       ) : (
@@ -357,9 +367,9 @@ export default function AttendanceMasterClient() {
                           ))}
                         </div>
                       )}
-                    </td>
+                    </TableCell>
 
-                    <td className="px-4 py-3">
+                    <TableCell className="px-4 py-3">
                       {user.machines.length === 0 ? (
                         <span className="block text-center text-sm text-gray-400">
                           -
@@ -428,9 +438,9 @@ export default function AttendanceMasterClient() {
                           })}
                         </div>
                       )}
-                    </td>
+                    </TableCell>
 
-                    <td className="px-4 py-3 text-center">
+                    <TableCell className="px-4 py-3 text-center">
                       <button
                         type="button"
                         onClick={() => openEdit(user)}
@@ -438,13 +448,12 @@ export default function AttendanceMasterClient() {
                       >
                         Edit
                       </button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
+          </TableBody>
+        </Table>
       </div>
 
       {editing && (

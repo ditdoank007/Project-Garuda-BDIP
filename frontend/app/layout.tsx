@@ -3,6 +3,8 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import GlobalFeedbackDialog from "@/components/common/feedback/GlobalFeedbackDialog";
+import AppShell from "@/components/layout/AppShell";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,12 +29,12 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${inter.variable} ${plusJakarta.variable} h-full antialiased`}
+      className={`${inter.variable} ${plusJakarta.variable} h-full overflow-hidden antialiased`}
     >
     <body
-      className="min-h-full flex flex-col font-sans"
+      className="h-full overflow-hidden flex flex-col font-sans"
     >
-        {children}
+        <AppShell>{children}</AppShell>
         <Toaster richColors position="top-right" />
       </body>
     </html>

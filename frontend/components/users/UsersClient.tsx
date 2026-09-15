@@ -43,6 +43,10 @@ function getErrorMessage(
   error: unknown,
   fallback: string,
 ): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
   if (
     typeof error === "object" &&
     error !== null &&
@@ -333,25 +337,30 @@ export default function UsersClient({
   }
 
   return (
-    <div className="space-y-6">
-      <UserToolbar
-        keyword={keyword}
-        onKeywordChange={setKeyword}
-        onRefresh={() => window.location.reload()}
-        onImportCsv={() => setImportOpen(true)}
-        onCreateUser={() => {
-          setDialogMode("create");
-          setOriginalUsername("");
-          setFormData(defaultUserForm);
-          setDialogOpen(true);
-        }}
-      />
+    <div className="flex h-full min-h-0 flex-col">
 
-      <UserTable
-        users={filteredUsers}
-        policies={policies}
-        onEdit={handleEditUser}
-      />
+      <div className="sticky top-0 z-20 shrink-0 bg-slate-100 pb-4">
+        <UserToolbar
+          keyword={keyword}
+          onKeywordChange={setKeyword}
+          onRefresh={() => window.location.reload()}
+          onImportCsv={() => setImportOpen(true)}
+          onCreateUser={() => {
+            setDialogMode("create");
+            setOriginalUsername("");
+            setFormData(defaultUserForm);
+            setDialogOpen(true);
+          }}
+        />
+      </div>
+
+      <div className="min-h-0 flex-1">
+        <UserTable
+          users={filteredUsers}
+          policies={policies}
+          onEdit={handleEditUser}
+        />
+      </div>
 
       <ImportUsersDialog
         open={importOpen}

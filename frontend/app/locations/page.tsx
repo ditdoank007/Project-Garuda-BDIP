@@ -1,4 +1,3 @@
-import AppShell from "@/components/layout/AppShell";
 import LocationsClient from "@/components/locations/LocationsClient";
 
 import { getLocations } from "@/services/location.service";
@@ -11,10 +10,8 @@ export default async function LocationsPage() {
   const locations: Location[] = response.data;
 
   return (
-    <AppShell>
-      <LocationsClient
+    <LocationsClient
         locations={locations}
       />
-    </AppShell>
   );
 }

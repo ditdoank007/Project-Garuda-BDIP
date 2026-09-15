@@ -23,6 +23,14 @@ import {
 } from "@/services/unit.service";
 
 import type { Unit } from "@/types/unit";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 import DeleteUnitDialog from "./DeleteUnitDialog";
 import UnitFormDialog from "./UnitFormDialog";
@@ -206,7 +214,7 @@ export default function UnitsClient({
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="flex h-full min-h-0 flex-col space-y-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">
@@ -267,7 +275,7 @@ export default function UnitsClient({
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col gap-4 border-b border-slate-200 p-5 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">
@@ -298,35 +306,38 @@ export default function UnitsClient({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50">
-                <tr className="border-b border-slate-200">
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="min-h-0 flex-1 overflow-auto">
+            <Table
+              containerClassName="overflow-visible"
+              className="min-w-[900px]"
+            >
+              <TableHeader>
+                <TableRow className="border-b border-slate-200">
+                  <TableHead className="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Unit
-                  </th>
+                  </TableHead>
 
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <TableHead className="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Description
-                  </th>
+                  </TableHead>
 
-                  <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <TableHead className="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Users
-                  </th>
+                  </TableHead>
 
-                  <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <TableHead className="sticky top-0 z-20 bg-slate-50 px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Actions
-                  </th>
-                </tr>
-              </thead>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
 
-              <tbody className="divide-y divide-slate-100">
+              <TableBody className="divide-y divide-slate-100">
                 {filteredUnits.map((unit) => (
-                  <tr
+                  <TableRow
                     key={unit.name}
                     className="transition hover:bg-slate-50"
                   >
-                    <td className="px-6 py-4">
+                    <TableCell className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
                           <Building2 size={19} />
@@ -342,25 +353,23 @@ export default function UnitsClient({
                           </p>
                         </div>
                       </div>
-                    </td>
+                    </TableCell>
 
-                    <td className="px-6 py-4 text-sm text-slate-600">
+                    <TableCell className="px-6 py-4 text-sm text-slate-600">
                       {unit.description || "-"}
-                    </td>
+                    </TableCell>
 
-                    <td className="px-6 py-4 text-center">
+                    <TableCell className="px-6 py-4 text-center">
                       <span className="inline-flex min-w-10 items-center justify-center rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
                         {unit.userCount}
                       </span>
-                    </td>
+                    </TableCell>
 
-                    <td className="px-6 py-4">
+                    <TableCell className="px-6 py-4">
                       <div className="flex justify-end gap-2">
                         <button
                           type="button"
-                          onClick={() =>
-                            openEdit(unit)
-                          }
+                          onClick={() => openEdit(unit)}
                           title="Edit unit"
                           className="rounded-lg p-2 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600"
                         >
@@ -369,22 +378,20 @@ export default function UnitsClient({
 
                         <button
                           type="button"
-                          onClick={() =>
-                            setDeleteTarget(unit)
-                          }
+                          onClick={() => setDeleteTarget(unit)}
                           title="Delete unit"
                           className="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
                         >
                           <Trash2 size={17} />
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
 
                 {filteredUnits.length === 0 && (
-                  <tr>
-                    <td
+                  <TableRow>
+                    <TableCell
                       colSpan={4}
                       className="px-6 py-16 text-center"
                     >
@@ -400,11 +407,11 @@ export default function UnitsClient({
                       <p className="mt-1 text-sm text-slate-500">
                         Try another search keyword.
                       </p>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       </div>

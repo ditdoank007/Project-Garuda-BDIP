@@ -1,4 +1,3 @@
-import AppShell from "@/components/layout/AppShell";
 import GroupsClient from "@/components/groups/GroupsClient";
 
 import { getGroups } from "@/lib/api/groups";
@@ -13,11 +12,9 @@ export default async function GroupsPage() {
   ]);
 
   return (
-    <AppShell>
-      <GroupsClient
+    <GroupsClient
         initialGroups={groups}
         users={usersResponse.data.users}
       />
-    </AppShell>
   );
 }

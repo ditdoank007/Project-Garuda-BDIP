@@ -144,7 +144,7 @@ export default function PoliciesClient({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col space-y-6">
 
       <div className="flex items-center justify-between">
 

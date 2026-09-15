@@ -29,20 +29,6 @@ export default function UserPolicySelector({
     setSelectedPolicy(initialPolicyId ?? "");
   }, [initialPolicyId]);
 
-  useEffect(() => {
-    console.log("UserPolicySelector", {
-      user: user.username,
-      policies,
-      initialPolicyId,
-      selectedPolicy,
-    });
-  }, [
-    user.username,
-    policies,
-    initialPolicyId,
-    selectedPolicy,
-  ]);
-
   async function handleSave() {
     if (!selectedPolicy) {
       toast.error("Please select a policy.");
@@ -73,7 +59,11 @@ export default function UserPolicySelector({
   return (
     <div className="flex items-center gap-2">
       <select
-        className="h-8 rounded-md border bg-background px-2 text-sm"
+        className={`h-8 rounded-md border bg-background px-2 text-sm ${
+          selectedPolicy
+            ? "bdip-data-complete"
+            : "bdip-data-incomplete"
+        }`}
         value={selectedPolicy}
         onChange={(e) =>
           setSelectedPolicy(e.target.value)

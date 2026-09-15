@@ -2,6 +2,14 @@
 
 import { useMemo, useState } from "react";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { FingerMachine } from "@/types/finger-machine";
 
 interface AttendancePreviewUser {
@@ -186,7 +194,7 @@ export default function AttendancePreviewClient({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">
           Attendance
@@ -392,51 +400,54 @@ export default function AttendancePreviewClient({
               />
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">
+            <div className="min-h-0 flex-1 overflow-auto">
+              <Table
+                containerClassName="overflow-visible"
+                className="min-w-[900px]"
+              >
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="sticky top-0 z-20 bg-gray-50">
                       UID
-                    </th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    </TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-gray-50">
                       FingerID
-                    </th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    </TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-gray-50">
                       Nama
-                    </th>
-                    <th className="px-4 py-3 text-center font-semibold text-gray-600">
+                    </TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
                       Fingerprint
-                    </th>
-                    <th className="px-4 py-3 text-center font-semibold text-gray-600">
+                    </TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
                       Status
-                    </th>
-                  </tr>
-                </thead>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
 
-                <tbody className="divide-y divide-gray-100 bg-white">
+                <TableBody>
                   {filteredUsers.map((user) => (
-                    <tr
+                    <TableRow
                       key={`${user.deviceUid}-${user.deviceUserId}`}
                       className="hover:bg-gray-50"
                     >
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-500">
+                      <TableCell className="whitespace-nowrap px-4 py-3 text-gray-500">
                         {user.deviceUid}
-                      </td>
+                      </TableCell>
 
-                      <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
+                      <TableCell className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
                         {user.deviceUserId || "-"}
-                      </td>
+                      </TableCell>
 
-                      <td className="px-4 py-3 text-gray-700">
+                      <TableCell className="px-4 py-3 text-gray-700">
                         {user.deviceName || "-"}
-                      </td>
+                      </TableCell>
 
-                      <td className="px-4 py-3 text-center font-medium text-gray-700">
+                      <TableCell className="px-4 py-3 text-center font-medium text-gray-700">
                         {user.templateCount}
-                      </td>
+                      </TableCell>
 
-                      <td className="px-4 py-3 text-center">
+                      <TableCell className="px-4 py-3 text-center">
                         {user.matched ? (
                           <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
                             MATCHED
@@ -446,22 +457,22 @@ export default function AttendancePreviewClient({
                             UNMATCHED
                           </span>
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
 
                   {filteredUsers.length === 0 && (
-                    <tr>
-                      <td
+                    <TableRow>
+                      <TableCell
                         colSpan={5}
                         className="px-4 py-10 text-center text-sm text-gray-500"
                       >
                         Tidak ada data yang cocok dengan pencarian.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         </>

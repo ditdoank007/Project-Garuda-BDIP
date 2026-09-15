@@ -1,5 +1,14 @@
 import type { Application } from "@/services/application.service";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
 interface Props {
   applications: Application[];
   onEdit: (application: Application) => void;
@@ -12,55 +21,58 @@ export default function ApplicationTable({
   onDeactivate,
 }: Props) {
   return (
-    <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
-      <table className="min-w-full">
-        <thead className="bg-slate-100">
-          <tr>
-            <th className="px-4 py-3 text-left">
+    <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-white shadow-sm">
+      <Table
+        containerClassName="overflow-visible"
+        className="min-w-[1100px]"
+      >
+        <TableHeader>
+          <TableRow>
+            <TableHead className="sticky top-0 z-20 bg-slate-100 px-4 py-3 text-left">
               Code
-            </th>
+            </TableHead>
 
-            <th className="px-4 py-3 text-left">
+            <TableHead className="sticky top-0 z-20 bg-slate-100 px-4 py-3 text-left">
               Name
-            </th>
+            </TableHead>
 
-            <th className="px-4 py-3 text-left">
+            <TableHead className="sticky top-0 z-20 bg-slate-100 px-4 py-3 text-left">
               Description
-            </th>
+            </TableHead>
 
-            <th className="px-4 py-3 text-left">
+            <TableHead className="sticky top-0 z-20 bg-slate-100 px-4 py-3 text-left">
               Base URL
-            </th>
+            </TableHead>
 
-            <th className="px-4 py-3 text-center">
+            <TableHead className="sticky top-0 z-20 bg-slate-100 px-4 py-3 text-center">
               Status
-            </th>
+            </TableHead>
 
-            <th className="px-4 py-3 text-center">
+            <TableHead className="sticky top-0 z-20 bg-slate-100 px-4 py-3 text-center">
               Actions
-            </th>
-          </tr>
-        </thead>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
 
-        <tbody>
+        <TableBody>
           {applications.map((application) => (
-            <tr
+            <TableRow
               key={application.id}
               className="border-t"
             >
-              <td className="px-4 py-3 font-medium">
+              <TableCell className="px-4 py-3 font-medium">
                 {application.code}
-              </td>
+              </TableCell>
 
-              <td className="px-4 py-3">
+              <TableCell className="px-4 py-3">
                 {application.name}
-              </td>
+              </TableCell>
 
-              <td className="px-4 py-3">
+              <TableCell className="px-4 py-3">
                 {application.description || "-"}
-              </td>
+              </TableCell>
 
-              <td className="px-4 py-3">
+              <TableCell className="px-4 py-3">
                 <a
                   href={application.baseUrl}
                   target="_blank"
@@ -69,9 +81,9 @@ export default function ApplicationTable({
                 >
                   {application.baseUrl}
                 </a>
-              </td>
+              </TableCell>
 
-              <td className="px-4 py-3 text-center">
+              <TableCell className="px-4 py-3 text-center">
                 <span
                   className={
                     application.isActive
@@ -83,14 +95,12 @@ export default function ApplicationTable({
                     ? "ACTIVE"
                     : "INACTIVE"}
                 </span>
-              </td>
+              </TableCell>
 
-              <td className="px-4 py-3 text-center">
+              <TableCell className="px-4 py-3 text-center">
                 <div className="flex justify-center gap-2">
                   <button
-                    onClick={() =>
-                      onEdit(application)
-                    }
+                    onClick={() => onEdit(application)}
                     className="rounded-md border px-3 py-1 text-sm hover:bg-slate-100"
                   >
                     Edit
@@ -107,11 +117,11 @@ export default function ApplicationTable({
                     </button>
                   )}
                 </div>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

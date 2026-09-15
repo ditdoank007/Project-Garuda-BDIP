@@ -5,6 +5,15 @@ import {
   Trash2,
 } from "lucide-react";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
 import type { Policy } from "@/types/policy";
 
 interface PolicyTableProps {
@@ -19,61 +28,54 @@ export default function PolicyTable({
   onDelete,
 }: PolicyTableProps) {
   return (
-    <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
-
-      <table className="min-w-full">
-
-        <thead className="bg-slate-50">
-
-          <tr>
-
-            <th className="px-5 py-3 text-left">
+    <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-white shadow-sm">
+      <Table
+        containerClassName="overflow-visible"
+        className="min-w-[760px]"
+      >
+        <TableHeader>
+          <TableRow>
+            <TableHead className="sticky top-0 z-20 bg-slate-50 px-5 py-3 text-left">
               Code
-            </th>
+            </TableHead>
 
-            <th className="px-5 py-3 text-left">
+            <TableHead className="sticky top-0 z-20 bg-slate-50 px-5 py-3 text-left">
               Name
-            </th>
+            </TableHead>
 
-            <th className="px-5 py-3 text-center">
+            <TableHead className="sticky top-0 z-20 bg-slate-50 px-5 py-3 text-center">
               Priority
-            </th>
+            </TableHead>
 
-            <th className="px-5 py-3 text-center">
+            <TableHead className="sticky top-0 z-20 bg-slate-50 px-5 py-3 text-center">
               Status
-            </th>
+            </TableHead>
 
-            <th className="px-5 py-3 text-right">
+            <TableHead className="sticky top-0 z-20 bg-slate-50 px-5 py-3 text-right">
               Actions
-            </th>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
 
-          </tr>
-
-        </thead>
-
-        <tbody>
-
+        <TableBody>
           {policies.map((policy) => (
-
-            <tr
+            <TableRow
               key={policy.id}
               className="border-t"
             >
-
-              <td className="px-5 py-4 font-medium">
+              <TableCell className="px-5 py-4 font-medium">
                 {policy.code}
-              </td>
+              </TableCell>
 
-              <td className="px-5 py-4">
+              <TableCell className="px-5 py-4">
                 {policy.name}
-              </td>
+              </TableCell>
 
-              <td className="px-5 py-4 text-center">
+              <TableCell className="px-5 py-4 text-center">
                 {policy.priority}
-              </td>
+              </TableCell>
 
-              <td className="px-5 py-4 text-center">
-
+              <TableCell className="px-5 py-4 text-center">
                 <span
                   className={
                     policy.enabled
@@ -85,13 +87,10 @@ export default function PolicyTable({
                     ? "Enabled"
                     : "Disabled"}
                 </span>
+              </TableCell>
 
-              </td>
-
-              <td className="px-5 py-4">
-
+              <TableCell className="px-5 py-4">
                 <div className="flex justify-end gap-2">
-
                   <button
                     onClick={() => onEdit(policy)}
                     className="rounded border p-2 hover:bg-slate-100"
@@ -105,19 +104,12 @@ export default function PolicyTable({
                   >
                     <Trash2 size={16} />
                   </button>
-
                 </div>
-
-              </td>
-
-            </tr>
-
+              </TableCell>
+            </TableRow>
           ))}
-
-        </tbody>
-
-      </table>
-
+        </TableBody>
+      </Table>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import AppShell from "@/components/layout/AppShell";
 import FingerMachinesClient from "@/components/machine/FingerMachinesClient";
 
 import {
@@ -33,11 +32,9 @@ export default async function FingerMachinePage() {
     locationResponse.data;
 
   return (
-    <AppShell>
-      <FingerMachinesClient
+    <FingerMachinesClient
         machines={machines}
         locations={locations}
       />
-    </AppShell>
   );
 }

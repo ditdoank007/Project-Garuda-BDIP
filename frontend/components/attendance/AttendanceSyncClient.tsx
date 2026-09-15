@@ -8,6 +8,14 @@ import {
   updateAttendanceSynchronizationSchedule,
 } from "@/lib/api/attendance";
 import type { FingerMachine } from "@/types/finger-machine";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type SyncSchedule = "DAILY" | "WEEKLY" | "MONTHLY";
 
@@ -532,44 +540,41 @@ export default function AttendanceSyncClient({
             Hasil Sinkronisasi Terakhir
           </div>
 
-          <div className="mt-3 overflow-x-auto rounded-lg border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+          <div className="mt-3 min-h-0 flex-1 overflow-auto rounded-lg border border-gray-200">
+            <Table
+              containerClassName="overflow-visible"
+              className="min-w-[900px]"
+            >
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="sticky top-0 z-20 bg-gray-50">
                     Mesin
-                  </th>
-
-                  <th className="px-4 py-3 text-center font-semibold text-gray-600">
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
                     Status
-                  </th>
-
-                  <th className="px-4 py-3 text-center font-semibold text-gray-600">
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
                     Cocok
-                  </th>
-
-                  <th className="px-4 py-3 text-center font-semibold text-gray-600">
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
                     Dibuat
-                  </th>
-
-                  <th className="px-4 py-3 text-center font-semibold text-gray-600">
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
                     Diubah
-                  </th>
-
-                  <th className="px-4 py-3 text-center font-semibold text-gray-600">
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
                     Disabled
-                  </th>
-
-                  <th className="px-4 py-3 text-center font-semibold text-gray-600">
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-20 bg-gray-50 text-center">
                     Dihapus
-                  </th>
-                </tr>
-              </thead>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
 
-              <tbody className="divide-y divide-gray-100 bg-white">
+              <TableBody>
                 {results.map((result) => (
-                  <tr key={result.machineCode}>
-                    <td className="px-4 py-3">
+                  <TableRow key={result.machineCode}>
+                    <TableCell className="px-4 py-3">
                       <div className="font-medium text-gray-900">
                         {result.machineCode}
                       </div>
@@ -577,9 +582,9 @@ export default function AttendanceSyncClient({
                       <div className="text-xs text-gray-500">
                         {result.machineName}
                       </div>
-                    </td>
+                    </TableCell>
 
-                    <td className="px-4 py-3 text-center">
+                    <TableCell className="px-4 py-3 text-center">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                           result.status === "SUCCESS"
@@ -591,31 +596,31 @@ export default function AttendanceSyncClient({
                       >
                         {result.status}
                       </span>
-                    </td>
+                    </TableCell>
 
-                    <td className="px-4 py-3 text-center">
+                    <TableCell className="px-4 py-3 text-center">
                       {result.matched}
-                    </td>
+                    </TableCell>
 
-                    <td className="px-4 py-3 text-center">
+                    <TableCell className="px-4 py-3 text-center">
                       {result.created}
-                    </td>
+                    </TableCell>
 
-                    <td className="px-4 py-3 text-center">
+                    <TableCell className="px-4 py-3 text-center">
                       {result.updated}
-                    </td>
+                    </TableCell>
 
-                    <td className="px-4 py-3 text-center">
+                    <TableCell className="px-4 py-3 text-center">
                       {result.disabled}
-                    </td>
+                    </TableCell>
 
-                    <td className="px-4 py-3 text-center">
+                    <TableCell className="px-4 py-3 text-center">
                       {result.deleted}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}

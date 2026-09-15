@@ -1,4 +1,3 @@
-import AppShell from "@/components/layout/AppShell";
 import PoliciesClient from "@/components/policies/PoliciesClient";
 import { getPolicies } from "@/services/policy.service";
 import type { Policy } from "@/types/policy";
@@ -41,8 +40,6 @@ const policies: Policy[] = response.data.map((p: any) => ({
 }));
 
   return (
-    <AppShell>
-      <PoliciesClient policies={policies} />
-    </AppShell>
+    <PoliciesClient policies={policies} />
   );
 }

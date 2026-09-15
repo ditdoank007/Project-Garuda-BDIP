@@ -13,7 +13,7 @@ export default async function Header() {
   const user = await getCurrentUser(cookieHeader);
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-white px-6 shadow-sm">
+    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b bg-white px-6 shadow-sm">
       <div>
         <h1 className="text-2xl font-bold text-slate-800">
           Dashboard

@@ -17,9 +17,12 @@ export default function DataTable({
   children,
 }: DataTableProps) {
   return (
-    <div className="rounded-md border">
+    <div className="h-full min-h-0 overflow-auto rounded-md border">
 
-      <Table>
+      <Table
+        containerClassName="overflow-visible"
+        className="min-w-[1400px]"
+      >
 
         <TableHeader>
           <TableRow>

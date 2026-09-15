@@ -435,7 +435,7 @@ export default function SessionsClient({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
           Sessions
@@ -549,40 +549,30 @@ export default function SessionsClient({
           </p>
         </div>
 
-        <div
-          className="
-            max-h-[65vh]
-            overflow-x-auto
-            overflow-y-auto
-          "
-        >
-          <Table>
-              <TableHeader
-                className="
-                  sticky
-                  top-0
-                  z-20
-                  bg-white
-                "
-              >
+        <div className="min-h-0 flex-1 overflow-auto">
+          <Table
+            containerClassName="overflow-visible"
+            className="min-w-[1500px]"
+          >
+            <TableHeader>
               <TableRow>
-                <TableHead>Status</TableHead>
-                <TableHead>User</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white">Status</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white">User</TableHead>
 
-                <TableHead>Policy</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white">Policy</TableHead>
 
-                <TableHead>Bandwidth</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white">Bandwidth</TableHead>
 
-                <TableHead>Login Limit</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white">Login Limit</TableHead>
 
-                <TableHead>Access</TableHead>
-                <TableHead>Client IP</TableHead>
-                <TableHead>Started</TableHead>
-                <TableHead>Duration</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white">Access</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white">Client IP</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white">Started</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white">Duration</TableHead>
 
-                <TableHead>Traffic Down</TableHead>
-                <TableHead>Traffic Up</TableHead>
-                <TableHead className="w-[70px] text-center">
+                <TableHead className="sticky top-0 z-20 bg-white">Traffic Down</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-white">Traffic Up</TableHead>
+                <TableHead className="sticky top-0 z-20 w-[70px] bg-white text-center">
                   Action
                 </TableHead>
               </TableRow>
@@ -729,9 +719,9 @@ export default function SessionsClient({
                 ))
               )}
             </TableBody>
-          </Table>
-        </div>
-      </Card>
+            </Table>
+          </div>
+        </Card>
       <Dialog
         open={selectedSession !== null}
         onOpenChange={(open) => {

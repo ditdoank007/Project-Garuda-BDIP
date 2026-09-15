@@ -32,6 +32,15 @@ import {
 
 import FingerMachineDialog from "./FingerMachineDialog";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
 interface FingerMachinesClientProps {
   machines: FingerMachine[];
   locations: Location[];
@@ -637,7 +646,7 @@ export default function FingerMachinesClient({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col space-y-6">
 
       <div className="flex items-center justify-between">
 
@@ -661,7 +670,7 @@ export default function FingerMachinesClient({
 
       </div>
 
-      <div className="rounded-xl border bg-white p-6 shadow-sm">
+<div className="rounded-xl border bg-white p-6 shadow-sm">
 
         <p className="text-sm text-slate-500">
           Total Mesin
@@ -673,7 +682,7 @@ export default function FingerMachinesClient({
 
       </div>
 
-      <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+<div className="flex min-h-[420px] flex-none flex-col overflow-hidden rounded-xl border bg-white shadow-sm">
 
         <div className="border-b px-6 py-4">
           <h2 className="font-semibold">
@@ -681,55 +690,58 @@ export default function FingerMachinesClient({
           </h2>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="min-h-0 flex-1 overflow-auto">
 
-          <table className="w-full text-sm">
+          <Table
+            containerClassName="overflow-visible"
+            className="min-w-[1200px]"
+          >
 
-            <thead className="bg-slate-50 text-left">
+            <TableHeader>
 
-              <tr>
+              <TableRow>
 
-                <th className="px-6 py-3 font-semibold">
+                <TableHead className="sticky top-0 z-20 bg-slate-50">
                   Code
-                </th>
+                </TableHead>
 
-                <th className="px-6 py-3 font-semibold">
+                <TableHead className="sticky top-0 z-20 bg-slate-50">
                   Nama
-                </th>
+                </TableHead>
 
-                <th className="px-6 py-3 font-semibold">
+                <TableHead className="sticky top-0 z-20 bg-slate-50">
                   IP Address
-                </th>
+                </TableHead>
 
-                <th className="px-6 py-3 font-semibold">
+                <TableHead className="sticky top-0 z-20 bg-slate-50">
                   Port
-                </th>
+                </TableHead>
 
-                <th className="px-6 py-3 font-semibold">
+                <TableHead className="sticky top-0 z-20 bg-slate-50">
                   Location
-                </th>
+                </TableHead>
 
-                <th className="px-6 py-3 font-semibold">
+                <TableHead className="sticky top-0 z-20 bg-slate-50">
                   ONLINE
-                </th>
+                </TableHead>
 
-                <th className="px-6 py-3 font-semibold">
+                <TableHead className="sticky top-0 z-20 bg-slate-50">
                   LAST SEEN
-                </th>
+                </TableHead>
 
-                <th className="px-6 py-3 font-semibold">
+                <TableHead className="sticky top-0 z-20 bg-slate-50">
                   Status
-                </th>
+                </TableHead>
 
-                <th className="px-6 py-3 text-right font-semibold">
+                <TableHead className="sticky top-0 z-20 bg-slate-50 text-right">
                   Action
-                </th>
+                </TableHead>
 
-              </tr>
+              </TableRow>
 
-            </thead>
+            </TableHeader>
 
-            <tbody className="divide-y">
+            <TableBody>
 
               {machines.map(
                 (machine) => {
@@ -737,165 +749,165 @@ export default function FingerMachinesClient({
                     getRuntime(machine.code);
 
                   return (
-                  <tr
-                    key={machine.id}
-                    className="hover:bg-slate-50"
-                  >
+                    <TableRow
+                      key={machine.id}
+                      className="hover:bg-slate-50"
+                    >
 
-                    <td className="px-6 py-4 font-medium">
-                      {machine.code}
-                    </td>
+                      <TableCell className="px-6 py-4 font-medium">
+                        {machine.code}
+                      </TableCell>
 
-                    <td className="px-6 py-4">
-                      {machine.name}
-                    </td>
+                      <TableCell className="px-6 py-4">
+                        {machine.name}
+                      </TableCell>
 
-                    <td className="px-6 py-4">
-                      {machine.ipAddress}
-                    </td>
+                      <TableCell className="px-6 py-4">
+                        {machine.ipAddress}
+                      </TableCell>
 
-                    <td className="px-6 py-4">
-                      {machine.port}
-                    </td>
+                      <TableCell className="px-6 py-4">
+                        {machine.port}
+                      </TableCell>
 
-                    <td className="px-6 py-4">
-                      {machine.locationName || "-"}
-                    </td>
+                      <TableCell className="px-6 py-4">
+                        {machine.locationName || "-"}
+                      </TableCell>
 
-                    <td className="px-6 py-4">
+                      <TableCell className="px-6 py-4">
 
-                      <span
-                        className={
-                          runtime?.isOnline
-                            ? "rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700"
-                            : "rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700"
-                        }
-                      >
-                        {runtime?.isOnline
-                          ? "ONLINE"
-                          : "OFFLINE"}
-                      </span>
-
-                    </td>
-
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {runtime?.lastSeenAt
-                        ? new Date(
-                            runtime.lastSeenAt,
-                          ).toLocaleString(
-                            "id-ID",
-                          )
-                        : "-"}
-                    </td>
-
-                    <td className="px-6 py-4">
-
-                      <span
-                        className={
-                          machine.isActive
-                            ? "rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700"
-                            : "rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
-                        }
-                      >
-                        {machine.isActive
-                          ? "ACTIVE"
-                          : "INACTIVE"}
-                      </span>
-
-                    </td>
-
-                    <td className="px-6 py-4 text-right">
-
-                      <div className="flex justify-end gap-2">
-
-                        <button
-                          type="button"
-                          onMouseDown={() =>
-                            console.log(
-                              "MANUAL PULL MOUSEDOWN",
-                              machine.code,
-                            )
+                        <span
+                          className={
+                            runtime?.isOnline
+                              ? "rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700"
+                              : "rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700"
                           }
-                          onClick={() =>
-                            openManualPullModal(
-                              machine,
-                            )
-                          }
-                          className="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <Download size={16} />
-                          Tarik Manual
-                        </button>
+                          {runtime?.isOnline
+                            ? "ONLINE"
+                            : "OFFLINE"}
+                        </span>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void openPolicyModal(
-                              machine,
+                      </TableCell>
+
+                      <TableCell className="px-6 py-4 text-sm text-slate-600">
+                        {runtime?.lastSeenAt
+                          ? new Date(
+                              runtime.lastSeenAt,
+                            ).toLocaleString(
+                              "id-ID",
                             )
+                          : "-"}
+                      </TableCell>
+
+                      <TableCell className="px-6 py-4">
+
+                        <span
+                          className={
+                            machine.isActive
+                              ? "rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700"
+                              : "rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
                           }
-                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
                         >
-                          <Settings size={16} />
-                          Pengaturan
-                        </button>
+                          {machine.isActive
+                            ? "ACTIVE"
+                            : "INACTIVE"}
+                        </span>
 
-                        <button
-                          onClick={() =>
-                            handleEditMachine(
-                              machine,
-                            )
-                          }
-                          className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-slate-50"
-                        >
-                          <Pencil size={16} />
-                          Edit
-                        </button>
+                      </TableCell>
 
-                        <button
-                          onClick={() =>
-                            handleDeleteMachine(
-                              machine,
-                            )
-                          }
-                          disabled={saving}
-                          className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Trash2 size={16} />
-                          Hapus
-                        </button>
+                      <TableCell className="px-6 py-4 text-right">
 
-                      </div>
+                        <div className="flex justify-end gap-2">
 
-                    </td>
+                          <button
+                            type="button"
+                            onMouseDown={() =>
+                              console.log(
+                                "MANUAL PULL MOUSEDOWN",
+                                machine.code,
+                              )
+                            }
+                            onClick={() =>
+                              openManualPullModal(
+                                machine,
+                              )
+                            }
+                            className="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <Download size={16} />
+                            Tarik Manual
+                          </button>
 
-                  </tr>
-                );
-              },
-            )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void openPolicyModal(
+                                machine,
+                              )
+                            }
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
+                          >
+                            <Settings size={16} />
+                            Pengaturan
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              handleEditMachine(
+                                machine,
+                              )
+                            }
+                            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-slate-50"
+                          >
+                            <Pencil size={16} />
+                            Edit
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              handleDeleteMachine(
+                                machine,
+                              )
+                            }
+                            disabled={saving}
+                            className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <Trash2 size={16} />
+                            Hapus
+                          </button>
+
+                        </div>
+
+                      </TableCell>
+
+                    </TableRow>
+                  );
+                },
+              )}
 
               {machines.length === 0 && (
-                <tr>
+                <TableRow>
 
-                  <td
+                  <TableCell
                     colSpan={9}
                     className="px-6 py-10 text-center text-slate-500"
                   >
                     Belum ada mesin finger.
-                  </td>
+                  </TableCell>
 
-                </tr>
+                </TableRow>
               )}
 
-            </tbody>
+            </TableBody>
 
-          </table>
+          </Table>
 
         </div>
 
       </div>
 
-      <div className="rounded-xl border bg-white p-6 shadow-sm">
+<div className="rounded-xl border bg-white p-6 shadow-sm">
 
         <div className="flex items-start justify-between gap-6">
 
@@ -999,11 +1011,7 @@ export default function FingerMachinesClient({
 
       </div>
 
-
-
-
-
-      <div className="rounded-xl border bg-white p-6 shadow-sm">
+<div className="rounded-xl border bg-white p-6 shadow-sm">
 
         <div className="flex items-start justify-between gap-6">
 
@@ -1156,432 +1164,6 @@ export default function FingerMachinesClient({
 
       </div>
 
-
-
-      {policyMachine && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-          onClick={closePolicyModal}
-        >
-          <div
-            className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  PENGATURAN MESIN FINGER
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Atur sinkronisasi waktu untuk mesin ini.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={closePolicyModal}
-                disabled={policySaving}
-                className="rounded-lg px-2 py-1 text-xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="mt-6 space-y-5">
-              <div className="rounded-xl bg-slate-50 p-4">
-                <div className="flex justify-between gap-4">
-                  <span className="text-sm text-slate-500">
-                    Mesin
-                  </span>
-
-                  <span className="text-sm font-semibold text-slate-900">
-                    {policyMachine.code}
-                  </span>
-                </div>
-
-                <div className="mt-2 flex justify-between gap-4">
-                  <span className="text-sm text-slate-500">
-                    Nama
-                  </span>
-
-                  <span className="text-right text-sm font-medium text-slate-900">
-                    {policyMachine.name}
-                  </span>
-                </div>
-              </div>
-
-              {policyLoading && (
-                <div className="rounded-lg border bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                  Membaca pengaturan mesin...
-                </div>
-              )}
-
-              {!policyLoading &&
-                machinePolicy && (
-                  <div className="space-y-5">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700">
-                        TIME SYNC
-                      </label>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setMachinePolicy({
-                            ...machinePolicy,
-                            timeSyncEnabled:
-                              !machinePolicy.timeSyncEnabled,
-                          })
-                        }
-                        disabled={policySaving}
-                        className={
-                          machinePolicy.timeSyncEnabled
-                            ? "mt-2 flex w-full items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-left"
-                            : "mt-2 flex w-full items-center justify-between rounded-lg border bg-slate-50 px-4 py-3 text-left"
-                        }
-                      >
-                        <span>
-                          <span
-                            className={
-                              machinePolicy.timeSyncEnabled
-                                ? "block font-semibold text-green-700"
-                                : "block font-semibold text-slate-600"
-                            }
-                          >
-                            {machinePolicy.timeSyncEnabled
-                              ? "ACTIVE"
-                              : "DISABLED"}
-                          </span>
-
-                          <span className="block text-xs text-slate-500">
-                            {machinePolicy.timeSyncEnabled
-                              ? "Sinkronisasi waktu otomatis aktif."
-                              : "Sinkronisasi waktu otomatis tidak dijalankan."}
-                          </span>
-                        </span>
-
-                        <span
-                          className={
-                            machinePolicy.timeSyncEnabled
-                              ? "text-green-600"
-                              : "text-slate-400"
-                          }
-                        >
-                          ●
-                        </span>
-                      </button>
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="machine-time-sync-interval"
-                        className="block text-sm font-medium text-slate-700"
-                      >
-                        Interval Sinkronisasi Waktu
-                      </label>
-
-                      <select
-                        id="machine-time-sync-interval"
-                        value={
-                          machinePolicy.timeSyncIntervalMinutes
-                        }
-                        onChange={(event) =>
-                          setMachinePolicy({
-                            ...machinePolicy,
-                            timeSyncIntervalMinutes:
-                              Number(event.target.value),
-                          })
-                        }
-                        disabled={policySaving}
-                        className="mt-2 w-full rounded-lg border px-3 py-2 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-                      >
-                        <option value={2}>
-                          Setiap 2 menit
-                        </option>
-
-                        <option value={5}>
-                          Setiap 5 menit
-                        </option>
-                      </select>
-
-                      <p className="mt-1 text-xs text-slate-500">
-                        Pengaturan ini berlaku khusus untuk mesin {policyMachine.code}.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-              {policyMessage && (
-                <div
-                  className={
-                    policyMessage.includes(
-                      "berhasil",
-                    )
-                      ? "rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700"
-                      : "rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700"
-                  }
-                >
-                  {policyMessage}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={closePolicyModal}
-                disabled={policySaving}
-                className="rounded-lg border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Batal
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  void saveMachinePolicy()
-                }
-                disabled={
-                  policyLoading ||
-                  policySaving ||
-                  !machinePolicy
-                }
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {policySaving
-                  ? "Menyimpan..."
-                  : "Simpan Pengaturan"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {manualPullMachine && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-          onClick={closeManualPullModal}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
-          >
-
-            <div className="flex items-start justify-between gap-4">
-
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  TARIK DATA FINGER
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Tarik data langsung dari mesin finger.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={closeManualPullModal}
-                disabled={manualPullLoading}
-                className="rounded-lg px-2 py-1 text-xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                ×
-              </button>
-
-            </div>
-
-
-            <div className="mt-6 space-y-3 rounded-xl bg-slate-50 p-4">
-
-              <div className="flex justify-between gap-4">
-                <span className="text-sm text-slate-500">
-                  Mesin
-                </span>
-
-                <span className="text-sm font-semibold text-slate-900">
-                  {manualPullMachine.code}
-                </span>
-              </div>
-
-              <div className="flex justify-between gap-4">
-                <span className="text-sm text-slate-500">
-                  Nama
-                </span>
-
-                <span className="text-right text-sm font-medium text-slate-900">
-                  {manualPullMachine.name}
-                </span>
-              </div>
-
-              <div className="flex justify-between gap-4">
-                <span className="text-sm text-slate-500">
-                  IP
-                </span>
-
-                <span className="text-sm font-mono text-slate-900">
-                  {manualPullMachine.ipAddress}
-                </span>
-              </div>
-
-              <div className="flex justify-between gap-4">
-                <span className="text-sm text-slate-500">
-                  Port
-                </span>
-
-                <span className="text-sm font-mono text-slate-900">
-                  {manualPullMachine.port}
-                </span>
-              </div>
-
-              <div className="flex justify-between gap-4">
-                <span className="text-sm text-slate-500">
-                  Status
-                </span>
-
-                <span
-                  className={
-                    getRuntime(
-                      manualPullMachine.code,
-                    )?.isOnline
-                      ? "rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700"
-                      : "rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700"
-                  }
-                >
-                  {getRuntime(
-                    manualPullMachine.code,
-                  )?.isOnline
-                    ? "ONLINE"
-                    : "OFFLINE"}
-                </span>
-              </div>
-
-            </div>
-
-
-            {manualPullError && (
-              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                <div className="font-semibold">
-                  TARIK DATA GAGAL
-                </div>
-
-                <div className="mt-1">
-                  {manualPullError}
-                </div>
-              </div>
-            )}
-
-
-            {manualPullResult && (
-              <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4">
-
-                <div className="font-semibold text-green-700">
-                  TARIK DATA BERHASIL
-                </div>
-
-                <div className="mt-3 grid grid-cols-3 gap-3 text-center">
-
-                  <div className="rounded-lg bg-white p-3">
-                    <div className="text-xs text-slate-500">
-                      DIBACA
-                    </div>
-
-                    <div className="mt-1 text-lg font-bold text-slate-900">
-                      {manualPullResult.read ?? 0}
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg bg-white p-3">
-                    <div className="text-xs text-slate-500">
-                      DATA BARU
-                    </div>
-
-                    <div className="mt-1 text-lg font-bold text-green-600">
-                      {manualPullResult.inserted ?? 0}
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg bg-white p-3">
-                    <div className="text-xs text-slate-500">
-                      DUPLICATE
-                    </div>
-
-                    <div className="mt-1 text-lg font-bold text-slate-600">
-                      {manualPullResult.skipped ?? 0}
-                    </div>
-                  </div>
-
-                </div>
-
-                <div className="mt-3 text-xs text-slate-500">
-                  Selesai:{" "}
-                  {new Date().toLocaleString("id-ID")}
-                </div>
-
-              </div>
-            )}
-
-
-            <div className="mt-6 flex justify-end gap-3">
-
-              <button
-                type="button"
-                onClick={closeManualPullModal}
-                disabled={manualPullLoading}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {manualPullResult || manualPullError
-                  ? "Tutup"
-                  : "Batal"}
-              </button>
-
-              {!manualPullResult && (
-                <button
-                  type="button"
-                  onClick={executeManualPull}
-                  disabled={manualPullLoading}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {manualPullLoading
-                    ? "MENARIK DATA..."
-                    : "TARIK DATA"}
-                </button>
-              )}
-
-            </div>
-
-          </div>
-        </div>
-      )}
-
-
-      <FingerMachineDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        title={
-          dialogMode === "create"
-            ? "Tambah Mesin Finger"
-            : "Edit Mesin Finger"
-        }
-        machine={formData}
-        locations={locations}
-        onChange={setFormData}
-        onSave={handleDialogSave}
-        saving={saving}
-        saveLabel={
-          dialogMode === "create"
-            ? "Tambah Mesin"
-            : "Simpan Perubahan"
-        }
-        readOnlyCode={
-          dialogMode === "edit"
-        }
-      />
-
-    </div>
+</div>
   );
 }
