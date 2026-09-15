@@ -83,14 +83,14 @@ export default function GroupTable({
 
               return (
                 <TableRow key={group.name}>
-                  <TableCell className="align-top">
-                    <p className="font-medium">{group.name}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                  <TableCell className="align-top text-white">
+                    <p className="font-medium text-white">{group.name}</p>
+                    <p className="mt-1 text-xs text-slate-400">
                       Created {group.createdAt || "-"}
                     </p>
                   </TableCell>
 
-                  <TableCell className="max-w-[260px] align-top text-muted-foreground">
+                  <TableCell className="max-w-[260px] align-top text-slate-200">
                     <span className="line-clamp-2">
                       {group.description || "-"}
                     </span>
@@ -106,16 +106,16 @@ export default function GroupTable({
                     </Badge>
                   </TableCell>
 
-                  <TableCell className="align-top font-mono text-xs">
+                  <TableCell className="align-top font-mono text-xs text-white">
                     {group.gidNumber > 0 ? (
                   group.gidNumber
                 ) : (
-                  <span className="text-muted-foreground">Not assigned</span>
+                  <span className="text-slate-400">Not assigned</span>
                 )}
                   </TableCell>
 
                   <TableCell
-                    className="max-w-[300px] align-top font-mono text-xs text-muted-foreground"
+                    className="max-w-[300px] align-top font-mono text-xs text-slate-300"
                     title={group.distinguishedName}
                   >
                     {shortDn(group.distinguishedName)}

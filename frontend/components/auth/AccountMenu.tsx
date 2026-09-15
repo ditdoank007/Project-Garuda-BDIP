@@ -31,7 +31,7 @@ export default function AccountMenu({ user }: AccountMenuProps) {
   return (
     <details className="relative group">
       <summary
-        className="flex cursor-pointer list-none items-center gap-3 rounded-lg px-2 py-1 text-left transition hover:bg-slate-100"
+        className="flex cursor-pointer list-none items-center gap-3 rounded-lg px-2 py-1 text-left transition hover:bg-white/10"
         aria-label="Buka menu akun"
       >
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
@@ -39,25 +39,25 @@ export default function AccountMenu({ user }: AccountMenuProps) {
         </span>
 
         <span className="hidden min-w-0 sm:block">
-          <span className="block max-w-44 truncate text-sm font-semibold text-slate-900">
+          <span className="block max-w-44 truncate text-sm font-semibold text-white">
             {fullName}
           </span>
-          <span className="block text-xs text-slate-500">{role}</span>
+          <span className="block text-xs text-slate-300">{role}</span>
         </span>
       </summary>
 
-      <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
-        <div className="border-b border-slate-100 px-4 py-3">
-          <p className="truncate text-sm font-semibold text-slate-900">
+      <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 backdrop-blur-xl py-1 shadow-xl">
+        <div className="border-b border-white/10 px-4 py-3">
+          <p className="truncate text-sm font-semibold text-white">
             {fullName}
           </p>
-          <p className="text-xs text-slate-500">{role}</p>
+          <p className="text-xs text-slate-300">{role}</p>
         </div>
 
         <form action="/logout-submit" method="POST">
           <button
             type="submit"
-            className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+            className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-500/10"
           >
             <LogOut className="h-4 w-4" />
             Logout

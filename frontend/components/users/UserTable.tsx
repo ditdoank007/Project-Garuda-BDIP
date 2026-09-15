@@ -193,32 +193,32 @@ export default function UserTable({
 
                 return (
                   <TableRow key={user.uid}>
-                    <TableCell className="font-medium bdip-data-complete">
+                    <TableCell className="font-medium text-white bdip-data-complete">
                       {user.username}
                     </TableCell>
 
-                    <TableCell className={dataClass(user.nip)}>
+                    <TableCell className={`text-white ${dataClass(user.nip)}`}>
                       {user.nip || "-"}
                     </TableCell>
 
-                    <TableCell className={dataClass(user.fingerId)}>
+                    <TableCell className={`text-white ${dataClass(user.fingerId)}`}>
                       {user.fingerId || "-"}
                     </TableCell>
 
-                    <TableCell className={dataClass(user.fullName)}>
+                    <TableCell className={`text-white ${dataClass(user.fullName)}`}>
                       {user.fullName || "-"}
                     </TableCell>
 
-                    <TableCell className={dataClass(user.email)}>
+                    <TableCell className={`text-white ${dataClass(user.email)}`}>
                       {user.email || "-"}
                     </TableCell>
 
-                    <TableCell className={dataClass(user.unit)}>
+                    <TableCell className={`text-white ${dataClass(user.unit)}`}>
                       {user.unit || "-"}
                     </TableCell>
 
                     <TableCell
-                      className={`min-w-[260px] ${policyClass}`}
+                      className={`min-w-[260px] text-white ${policyClass}`}
                     >
                       <UserPolicySelector
                         user={user}

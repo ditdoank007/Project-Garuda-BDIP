@@ -21,6 +21,9 @@ function isPathAllowed(pathname: string, paths: string[]) {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-bdip-pathname", pathname);
+
   const hasSession = Boolean(
     request.cookies.get("bdip_session")?.value,
   );
@@ -32,7 +35,11 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    return NextResponse.next();
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   // Semua halaman aplikasi membutuhkan session.
@@ -89,9 +96,6 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-bdip-pathname", pathname);
-
   return NextResponse.next({
     request: {
       headers: requestHeaders,
@@ -106,6 +110,6 @@ export const config = {
      * API tidak ikut middleware ini karena API sudah
      * dilindungi GlobalAuthorizationMiddleware di backend.
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api|_next/static|_next/image|images|favicon.ico).*)",
   ],
 };
