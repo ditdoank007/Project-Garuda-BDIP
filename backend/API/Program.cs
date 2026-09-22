@@ -27,8 +27,10 @@ using BDIP.Infrastructure.ImportUsers;
 using BDIP.Persistence.PostgreSQL;
 using BDIP.Persistence.Sessions;
 using BDIP.Application.Sessions;
+using BDIP.Application.Audit;
 using BDIP.Application.Roles;
 using BDIP.Infrastructure.Roles;
+using BDIP.Infrastructure.Audit;
 using BDIP.Application.Locations;
 using BDIP.Application.FingerMachines;
 using BDIP.Application.Attendance;
@@ -146,6 +148,7 @@ builder.Services.Configure<RouterOsOptions>(
 builder.Services.Configure<RouterOsOvpnOptions>(
     builder.Configuration.GetSection("RouterOsOvpn"));
 
+builder.Services.AddScoped<IAuditLogService, PostgreSqlAuditLogService>();
 builder.Services.AddScoped<ISessionService, PostgreSqlSessionService>();
 builder.Services.AddScoped<IRoleService, LdapRoleService>();
 builder.Services.AddScoped<ILocationService, PostgreSqlLocationService>();
@@ -240,6 +243,8 @@ if (app.Environment.IsDevelopment())
 app.UseCors(BdipFrontendCorsPolicy);
 
 app.UseMiddleware<GlobalAuthorizationMiddleware>();
+
+app.UseMiddleware<AuditLoggingMiddleware>();
 
 app.UseAuthorization();
 

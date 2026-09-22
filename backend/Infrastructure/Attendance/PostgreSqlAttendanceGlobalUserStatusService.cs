@@ -93,7 +93,7 @@ public sealed class PostgreSqlAttendanceGlobalUserStatusService
         foreach (var machine in machines)
         {
             var collectorResponse = await _httpClient.PostAsJsonAsync(
-                "http://192.168.100.129:8090/attendance/user-enabled",
+                "http://hris-collector.sarsurabaya.id:8090/attendance/user-enabled",
                 new
                 {
                     ip = machine.IpAddress,

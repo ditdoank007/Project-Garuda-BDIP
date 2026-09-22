@@ -110,7 +110,7 @@ export default function LocationsClient({
 
         <div>
 
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-white text-3xl font-bold">
             Locations
           </h1>
 

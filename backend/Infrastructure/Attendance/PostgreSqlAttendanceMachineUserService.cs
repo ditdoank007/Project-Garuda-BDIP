@@ -157,7 +157,7 @@ public sealed class PostgreSqlAttendanceMachineUserService
 
         using var response =
             await _httpClient.PostAsJsonAsync(
-                "http://192.168.100.129:8090/attendance/user-enabled",
+                "http://hris-collector.sarsurabaya.id:8090/attendance/user-enabled",
                 payload,
                 cancellationToken);
 

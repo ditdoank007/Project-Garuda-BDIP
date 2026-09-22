@@ -319,7 +319,7 @@ export default function RolesClient({
     <div className="flex h-full min-h-0 flex-col space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+          <h1 className="text-white text-2xl font-semibold tracking-tight text-slate-950">
             Roles
           </h1>
 

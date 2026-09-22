@@ -437,7 +437,7 @@ export default function SessionsClient({
   return (
     <div className="flex h-full min-h-0 flex-col space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-white text-3xl font-bold tracking-tight text-slate-900">
           Sessions
         </h1>
 

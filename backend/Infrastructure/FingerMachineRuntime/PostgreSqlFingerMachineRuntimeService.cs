@@ -766,7 +766,7 @@ public sealed class PostgreSqlFingerMachineRuntimeService
 
         var response =
             await client.PostAsync(
-                "http://192.168.100.129:8090/manual-pull",
+                "http://hris-collector.sarsurabaya.id:8090/manual-pull",
                 content
             );
 

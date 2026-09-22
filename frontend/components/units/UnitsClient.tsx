@@ -217,7 +217,7 @@ export default function UnitsClient({
       <div className="flex h-full min-h-0 flex-col space-y-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h1 className="text-white text-3xl font-bold tracking-tight text-slate-900">
               Units
             </h1>
 

@@ -118,7 +118,7 @@ public sealed class PostgreSqlAttendanceDiscoveryService
 
         using var response =
             await _httpClient.PostAsJsonAsync(
-                "http://192.168.100.129:8090/attendance/preview",
+                "http://hris-collector.sarsurabaya.id:8090/attendance/preview",
                 payload,
                 cancellationToken);
 
@@ -381,7 +381,7 @@ public sealed class PostgreSqlAttendanceDiscoveryService
 
         using var previewResponse =
             await _httpClient.PostAsJsonAsync(
-                "http://192.168.100.129:8090/attendance/preview",
+                "http://hris-collector.sarsurabaya.id:8090/attendance/preview",
                 previewPayload,
                 cancellationToken);
 
@@ -458,7 +458,7 @@ public sealed class PostgreSqlAttendanceDiscoveryService
             {
                 using var deleteResponse =
                     await _httpClient.PostAsJsonAsync(
-                        "http://192.168.100.129:8090/attendance/delete-user",
+                        "http://hris-collector.sarsurabaya.id:8090/attendance/delete-user",
                         deletePayload,
                         cancellationToken);
 

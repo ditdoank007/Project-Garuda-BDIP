@@ -33,6 +33,16 @@ import {
 import FingerMachineDialog from "./FingerMachineDialog";
 
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import { Button } from "@/components/ui/button";
+
+import {
   Table,
   TableBody,
   TableCell,
@@ -651,7 +661,7 @@ export default function FingerMachinesClient({
       <div className="flex items-center justify-between">
 
         <div>
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-white text-3xl font-bold">
             Mesin Finger
           </h1>
 
@@ -1164,6 +1174,261 @@ export default function FingerMachinesClient({
 
       </div>
 
-</div>
+      <FingerMachineDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        title={
+          dialogMode === "create"
+            ? "Tambah Mesin Finger"
+            : "Edit Mesin Finger"
+        }
+        machine={formData}
+        locations={locations}
+        onChange={setFormData}
+        onSave={handleDialogSave}
+        saving={saving}
+        saveLabel={
+          dialogMode === "create"
+            ? "Tambah Mesin"
+            : "Simpan Perubahan"
+        }
+        readOnlyCode={dialogMode === "edit"}
+      />
+
+      <Dialog
+        open={manualPullMachine !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeManualPullModal();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Tarik Data Manual</DialogTitle>
+          </DialogHeader>
+
+          {manualPullMachine && (
+            <div className="space-y-4">
+              <div className="rounded-lg border bg-slate-50 p-4">
+                <p className="text-sm text-slate-500">Mesin</p>
+                <p className="font-semibold text-slate-900">
+                  {manualPullMachine.code} — {manualPullMachine.name}
+                </p>
+              </div>
+
+              {!manualPullResult && !manualPullError && (
+                <p className="text-sm text-slate-600">
+                  Jalankan penarikan data attendance dari mesin ini sekarang.
+                </p>
+              )}
+
+              {manualPullLoading && (
+                <p className="text-sm text-blue-600">
+                  Sedang menarik data dari mesin...
+                </p>
+              )}
+
+              {manualPullError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  {manualPullError}
+                </div>
+              )}
+
+              {manualPullResult && (
+                <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+                  <p className="font-semibold">Tarik data berhasil.</p>
+                  <pre className="mt-2 whitespace-pre-wrap font-sans">
+                    {JSON.stringify(manualPullResult, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeManualPullModal}
+              disabled={manualPullLoading}
+            >
+              Tutup
+            </Button>
+
+            {!manualPullResult && (
+              <Button
+                onClick={executeManualPull}
+                disabled={manualPullLoading}
+              >
+                {manualPullLoading
+                  ? "Menarik Data..."
+                  : "Tarik Data"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={policyMachine !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            closePolicyModal();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Pengaturan Mesin Finger</DialogTitle>
+          </DialogHeader>
+
+          {policyMachine && (
+            <div className="space-y-5">
+              <div className="rounded-lg border bg-slate-50 p-4">
+                <p className="text-sm text-slate-500">Mesin</p>
+                <p className="font-semibold text-slate-900">
+                  {policyMachine.code} — {policyMachine.name}
+                </p>
+              </div>
+
+              {policyLoading && (
+                <p className="text-sm text-slate-500">
+                  Membaca pengaturan mesin...
+                </p>
+              )}
+
+              {!policyLoading && machinePolicy && (
+                <div className="space-y-4">
+                  <label className="flex items-center justify-between rounded-lg border p-4">
+                    <span>
+                      <span className="block font-medium text-slate-900">
+                        Collection
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Aktifkan pengambilan data attendance.
+                      </span>
+                    </span>
+
+                    <input
+                      type="checkbox"
+                      checked={machinePolicy.collectionEnabled}
+                      onChange={(event) =>
+                        setMachinePolicy({
+                          ...machinePolicy,
+                          collectionEnabled:
+                            event.target.checked,
+                        })
+                      }
+                      className="h-4 w-4"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-medium text-slate-700">
+                      Collection Interval (menit)
+                    </span>
+
+                    <input
+                      type="number"
+                      min="1"
+                      value={machinePolicy.collectionIntervalMinutes}
+                      onChange={(event) =>
+                        setMachinePolicy({
+                          ...machinePolicy,
+                          collectionIntervalMinutes:
+                            Number(event.target.value),
+                        })
+                      }
+                      className="mt-2 w-full rounded-lg border px-3 py-2 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between rounded-lg border p-4">
+                    <span>
+                      <span className="block font-medium text-slate-900">
+                        Time Sync
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Aktifkan sinkronisasi waktu mesin.
+                      </span>
+                    </span>
+
+                    <input
+                      type="checkbox"
+                      checked={machinePolicy.timeSyncEnabled}
+                      onChange={(event) =>
+                        setMachinePolicy({
+                          ...machinePolicy,
+                          timeSyncEnabled:
+                            event.target.checked,
+                        })
+                      }
+                      className="h-4 w-4"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-medium text-slate-700">
+                      Time Sync Interval (menit)
+                    </span>
+
+                    <input
+                      type="number"
+                      min="1"
+                      value={machinePolicy.timeSyncIntervalMinutes}
+                      onChange={(event) =>
+                        setMachinePolicy({
+                          ...machinePolicy,
+                          timeSyncIntervalMinutes:
+                            Number(event.target.value),
+                        })
+                      }
+                      className="mt-2 w-full rounded-lg border px-3 py-2 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                    />
+                  </label>
+                </div>
+              )}
+
+              {policyMessage && (
+                <p
+                  className={
+                    policyMessage.includes("berhasil")
+                      ? "text-sm text-green-600"
+                      : "text-sm text-red-600"
+                  }
+                >
+                  {policyMessage}
+                </p>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closePolicyModal}
+              disabled={policySaving}
+            >
+              Tutup
+            </Button>
+
+            <Button
+              onClick={saveMachinePolicy}
+              disabled={
+                policyLoading ||
+                policySaving ||
+                !machinePolicy
+              }
+            >
+              {policySaving
+                ? "Menyimpan..."
+                : "Simpan Pengaturan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+    </div>
+
   );
 }

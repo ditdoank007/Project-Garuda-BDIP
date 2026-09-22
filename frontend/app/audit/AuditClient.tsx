@@ -127,7 +127,7 @@ export default function AuditClient() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
       <PageHeader
         title="Log Activity"
         description="Riwayat aktivitas dan perubahan yang terjadi di BDIP."
@@ -260,25 +260,27 @@ export default function AuditClient() {
       )}
 
 
-      <div className="text-sm text-muted-foreground">
-        {loading
-          ? "Memuat Log Activity..."
-          : `${total.toLocaleString("id-ID")} aktivitas`}
-      </div>
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+        <div className="shrink-0 text-sm text-muted-foreground">
+          {loading
+            ? "Memuat Log Activity..."
+            : `${total.toLocaleString("id-ID")} aktivitas`}
+        </div>
 
-      <DataTable
-        headers={
+        <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-white/10">
+          <DataTable
+            headers={
           <>
-            <TableHead className="sticky top-0 z-20 bg-white">Timestamp</TableHead>
-            <TableHead className="sticky top-0 z-20 bg-white">Username</TableHead>
-            <TableHead className="sticky top-0 z-20 bg-white">Nama Lengkap</TableHead>
-            <TableHead className="sticky top-0 z-20 bg-white">Role</TableHead>
-            <TableHead className="sticky top-0 z-20 bg-white">Activity</TableHead>
-            <TableHead className="sticky top-0 z-20 bg-white">Module</TableHead>
-            <TableHead className="sticky top-0 z-20 bg-white">Target</TableHead>
-            <TableHead className="sticky top-0 z-20 bg-white">Result</TableHead>
-            <TableHead className="sticky top-0 z-20 bg-white">IP Address</TableHead>
-            <TableHead className="sticky top-0 z-20 bg-white">Details</TableHead>
+            <TableHead className="sticky top-0 z-30 bg-white">Timestamp</TableHead>
+            <TableHead className="sticky top-0 z-30 bg-white">Username</TableHead>
+            <TableHead className="sticky top-0 z-30 bg-white">Nama Lengkap</TableHead>
+            <TableHead className="sticky top-0 z-30 bg-white">Role</TableHead>
+            <TableHead className="sticky top-0 z-30 bg-white">Activity</TableHead>
+            <TableHead className="sticky top-0 z-30 bg-white">Module</TableHead>
+            <TableHead className="sticky top-0 z-30 bg-white">Target</TableHead>
+            <TableHead className="sticky top-0 z-30 bg-white">Result</TableHead>
+            <TableHead className="sticky top-0 z-30 bg-white">IP Address</TableHead>
+            <TableHead className="sticky top-0 z-30 bg-white">Details</TableHead>
           </>
         }
       >
@@ -286,7 +288,7 @@ export default function AuditClient() {
           <TableRow>
             <TableCell
               colSpan={10}
-              className="py-10 text-center"
+              className="py-10 text-center text-white"
             >
               Memuat data...
             </TableCell>
@@ -295,7 +297,7 @@ export default function AuditClient() {
           <TableRow>
             <TableCell
               colSpan={10}
-              className="py-10 text-center"
+              className="py-10 text-center text-white"
             >
               Tidak ada aktivitas.
             </TableCell>
@@ -303,25 +305,25 @@ export default function AuditClient() {
         ) : (
           logs.map((log) => (
             <TableRow key={log.id}>
-              <TableCell>
+              <TableCell className="text-white">
                 {formatTimestamp(log.createdAt)}
               </TableCell>
-              <TableCell>{log.username || "-"}</TableCell>
-              <TableCell>{log.fullName || "-"}</TableCell>
-              <TableCell>{log.role || "-"}</TableCell>
-              <TableCell className="font-medium">
+              <TableCell className="text-white">{log.username || "-"}</TableCell>
+              <TableCell className="text-white">{log.fullName || "-"}</TableCell>
+              <TableCell className="text-white">{log.role || "-"}</TableCell>
+              <TableCell className="font-medium text-white">
                 {log.action}
               </TableCell>
-              <TableCell>{log.module}</TableCell>
-              <TableCell>{log.target || "-"}</TableCell>
+              <TableCell className="text-white">{log.module}</TableCell>
+              <TableCell className="text-white">{log.target || "-"}</TableCell>
               <TableCell>
                 <span className={resultClass(log.result)}>
                   {log.result}
                 </span>
               </TableCell>
-              <TableCell>{log.ipAddress || "-"}</TableCell>
+              <TableCell className="text-white">{log.ipAddress || "-"}</TableCell>
               <TableCell
-                className="max-w-[360px] truncate"
+                className="max-w-[360px] truncate text-white"
                 title={log.details || ""}
               >
                 {log.details || "-"}
@@ -329,9 +331,11 @@ export default function AuditClient() {
             </TableRow>
           ))
         )}
-      </DataTable>
+          </DataTable>
+        </div>
+      </div>
 
-      <div className="flex items-center justify-between">
+      <div className="shrink-0 flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Halaman {page} dari {totalPages || 1}
         </div>

@@ -1,3 +1,4 @@
+using BDIP.Application.Audit;
 using BDIP.Application.Auth;
 using BDIP.Contracts.Auth;
 using Microsoft.AspNetCore.Mvc;
@@ -13,15 +14,18 @@ public class AuthController : ControllerBase
     private readonly IAuthService _authService;
     private readonly IBdipSessionService _sessionService;
     private readonly ISsoAuthorizationCodeService _ssoService;
+    private readonly IAuditLogService _auditLogService;
 
     public AuthController(
         IAuthService authService,
         IBdipSessionService sessionService,
-        ISsoAuthorizationCodeService ssoService)
+        ISsoAuthorizationCodeService ssoService,
+        IAuditLogService auditLogService)
     {
         _authService = authService;
         _sessionService = sessionService;
         _ssoService = ssoService;
+        _auditLogService = auditLogService;
     }
 
     [HttpPost("login")]
@@ -45,6 +49,26 @@ public class AuthController : ControllerBase
                     Expires = DateTimeOffset.UtcNow.AddHours(8)
                 });
 
+            try
+            {
+                await _auditLogService.WriteAsync(
+                    action: "LOGIN",
+                    module: "AUTH",
+                    username: user.Username,
+                    fullName: user.FullName,
+                    role: user.Role,
+                    target: null,
+                    result: "SUCCESS",
+                    ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    userAgent: Request.Headers.UserAgent.FirstOrDefault(),
+                    details: "User login successful.");
+            }
+            catch (Exception auditEx)
+            {
+                Console.WriteLine(
+                    $"[AUDIT] LOGIN write failed: {auditEx.Message}");
+            }
+
             return Ok(new
             {
                 success = true,
@@ -54,6 +78,26 @@ public class AuthController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
+            try
+            {
+                await _auditLogService.WriteAsync(
+                    action: "LOGIN_FAILED",
+                    module: "AUTH",
+                    username: request.Username,
+                    fullName: request.Username,
+                    role: "User",
+                    target: null,
+                    result: "FAILED",
+                    ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    userAgent: Request.Headers.UserAgent.FirstOrDefault(),
+                    details: "Authentication failed.");
+            }
+            catch (Exception auditEx)
+            {
+                Console.WriteLine(
+                    $"[AUDIT] LOGIN_FAILED write failed: {auditEx.Message}");
+            }
+
             return Unauthorized(new
             {
                 success = false,
@@ -170,8 +214,35 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout")]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
+        _sessionService.TryRead(
+            Request.Cookies[SessionCookieName],
+            out var currentUser);
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(currentUser.Username))
+            {
+                await _auditLogService.WriteAsync(
+                    action: "LOGOUT",
+                    module: "AUTH",
+                    username: currentUser.Username,
+                    fullName: currentUser.FullName,
+                    role: currentUser.Role,
+                    target: null,
+                    result: "SUCCESS",
+                    ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    userAgent: Request.Headers.UserAgent.FirstOrDefault(),
+                    details: "User logout successful.");
+            }
+        }
+        catch (Exception auditEx)
+        {
+            Console.WriteLine(
+                $"[AUDIT] LOGOUT write failed: {auditEx.Message}");
+        }
+
         Response.Cookies.Delete(
             SessionCookieName,
             new CookieOptions

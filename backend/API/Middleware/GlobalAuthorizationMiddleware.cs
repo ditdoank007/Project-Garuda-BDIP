@@ -69,6 +69,35 @@ public sealed class GlobalAuthorizationMiddleware
             }
         }
 
+        // Internal HRIS-Controller boleh melaporkan hasil runtime
+        // melalui secret khusus, tetapi hanya untuk endpoint runtime
+        // yang memang digunakan oleh collector dan time-sync.
+        if (HttpMethods.IsPost(method) &&
+            path.StartsWith(
+                "/api/finger-machines/",
+                StringComparison.OrdinalIgnoreCase) &&
+            (path.EndsWith("/runtime", StringComparison.OrdinalIgnoreCase) ||
+             path.EndsWith("/runtime/pull", StringComparison.OrdinalIgnoreCase) ||
+             path.EndsWith("/runtime/sync", StringComparison.OrdinalIgnoreCase)))
+        {
+            var configuredSecret =
+                configuration[InternalSecretConfig];
+
+            var receivedSecret =
+                context.Request.Headers[InternalSecretHeader]
+                    .FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(configuredSecret) &&
+                string.Equals(
+                    receivedSecret,
+                    configuredSecret,
+                    StringComparison.Ordinal))
+            {
+                await _next(context);
+                return;
+            }
+        }
+
         // Browser/API request harus mempunyai session valid.
         var token =
             context.Request.Cookies[SessionCookieName];

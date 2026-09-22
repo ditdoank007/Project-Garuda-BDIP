@@ -21,7 +21,7 @@ public sealed class SynologySnmpController : ControllerBase
     {
         var snapshot =
             await _service.GetSnapshotAsync(
-                "192.168.33.200",
+                "synology.sarsurabaya.id",
                 cancellationToken);
 
         return Ok(snapshot);

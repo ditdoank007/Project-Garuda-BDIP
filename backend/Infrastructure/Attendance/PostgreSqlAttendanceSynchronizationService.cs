@@ -484,7 +484,7 @@ public sealed class PostgreSqlAttendanceSynchronizationService
     {
         using var response =
             await _httpClient.PostAsJsonAsync(
-                "http://192.168.100.129:8090/attendance/snapshot",
+                "http://hris-collector.sarsurabaya.id:8090/attendance/snapshot",
                 new
                 {
                     ip = machine.IpAddress,
@@ -547,7 +547,7 @@ public sealed class PostgreSqlAttendanceSynchronizationService
 
         using var response =
             await _httpClient.PostAsJsonAsync(
-                "http://192.168.100.129:8090/attendance/sync-user",
+                "http://hris-collector.sarsurabaya.id:8090/attendance/sync-user",
                 payload,
                 cancellationToken);
 
