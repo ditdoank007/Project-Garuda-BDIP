@@ -12,6 +12,9 @@ services:
     volumes:
       - ../frontend:/app
 
+    env_file:
+      - internal-api.env
+
     environment:
       NEXT_PUBLIC_API_URL: /api
       BDIP_INTERNAL_API_URL: http://backend:8080/api
@@ -32,6 +35,7 @@ services:
 
     env_file:
       - backend-db.env
+      - internal-api.env
 
     build:
       context: ..
