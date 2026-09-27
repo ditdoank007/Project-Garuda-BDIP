@@ -20,9 +20,17 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-import { getAnalytics } from "@/services/analytics.service";
+import {
+  getAnalytics,
+  searchAnalyticsUsers,
+} from "@/services/analytics.service";
 import type {
   AnalyticsData,
   AnalyticsUser,
@@ -180,6 +188,11 @@ export default function AnalyticsClient() {
     toInputDate(startOfNextMonth(now)),
   );
   const [username, setUsername] = useState("");
+  const [userSuggestions, setUserSuggestions] = useState<string[]>([]);
+  const [showUserSuggestions, setShowUserSuggestions] = useState(false);
+  const [searchingUsers, setSearchingUsers] = useState(false);
+  const userSearchRequest = useRef(0);
+
   const [access, setAccess] = useState<
     "all" | "ovpn" | "hotspot"
   >("all");
@@ -318,12 +331,100 @@ export default function AnalyticsClient() {
                 size={17}
                 className="absolute left-3 top-[31px] text-slate-500"
               />
-              <input
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="Search user, e.g. dityo.mahendro"
-                className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/60 pl-9 pr-3 text-sm text-white outline-none transition focus:border-blue-400/60"
-              />
+              <div className="relative">
+                <input
+                  value={username}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setUsername(value);
+                    setShowUserSuggestions(true);
+
+                    const requestId = ++userSearchRequest.current;
+
+                    if (value.trim().length < 2) {
+                      setUserSuggestions([]);
+                      setSearchingUsers(false);
+                      return;
+                    }
+
+                    setSearchingUsers(true);
+
+                    window.setTimeout(async () => {
+                      if (requestId !== userSearchRequest.current) return;
+
+                      try {
+                        const response = await searchAnalyticsUsers(
+                          value.trim(),
+                          10,
+                        );
+
+                        if (requestId === userSearchRequest.current) {
+                          setUserSuggestions(response.data);
+                        }
+                      } catch {
+                        if (requestId === userSearchRequest.current) {
+                          setUserSuggestions([]);
+                        }
+                      } finally {
+                        if (requestId === userSearchRequest.current) {
+                          setSearchingUsers(false);
+                        }
+                      }
+                    }, 250);
+                  }}
+                  onFocus={() => {
+                    if (username.trim().length >= 2) {
+                      setShowUserSuggestions(true);
+                    }
+                  }}
+                  onBlur={() => {
+                    window.setTimeout(
+                      () => setShowUserSuggestions(false),
+                      150,
+                    );
+                  }}
+                  placeholder="Search user, e.g. dityo.mahendro"
+                  className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/60 pl-9 pr-3 text-sm text-white outline-none transition focus:border-blue-400/60"
+                />
+
+                {showUserSuggestions &&
+                  username.trim().length >= 2 && (
+                    <div className="absolute left-0 right-0 top-[44px] z-50 overflow-hidden rounded-xl border border-white/10 bg-[#111b2d] shadow-2xl shadow-black/30">
+                      {searchingUsers ? (
+                        <div className="px-4 py-3 text-xs text-slate-400">
+                          Searching users...
+                        </div>
+                      ) : userSuggestions.length > 0 ? (
+                        <div className="max-h-64 overflow-y-auto py-1">
+                          {userSuggestions.map((suggestion) => (
+                            <button
+                              key={suggestion}
+                              type="button"
+                              onMouseDown={(event) => {
+                                event.preventDefault();
+                              }}
+                              onClick={() => {
+                                setUsername(suggestion);
+                                setUserSuggestions([]);
+                                setShowUserSuggestions(false);
+                                void loadAnalytics(suggestion);
+                              }}
+                              className="flex w-full items-center px-4 py-2.5 text-left text-sm text-slate-200 transition hover:bg-blue-500/10 hover:text-white"
+                            >
+                              <span className="truncate">
+                                {suggestion}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="px-4 py-3 text-xs text-slate-500">
+                          No matching users
+                        </div>
+                      )}
+                    </div>
+                  )}
+              </div>
             </label>
 
             <label>
@@ -405,6 +506,8 @@ export default function AnalyticsClient() {
                 type="button"
                 onClick={() => {
                   setUsername("");
+                  setUserSuggestions([]);
+                  setShowUserSuggestions(false);
                   void loadAnalytics("");
                 }}
                 className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300 transition hover:bg-white/5"
