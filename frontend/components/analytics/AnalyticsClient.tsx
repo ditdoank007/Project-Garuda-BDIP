@@ -188,6 +188,7 @@ export default function AnalyticsClient() {
     toInputDate(startOfNextMonth(now)),
   );
   const [username, setUsername] = useState("");
+  const [selectedUsername, setSelectedUsername] = useState("");
   const [userSuggestions, setUserSuggestions] = useState<string[]>([]);
   const [showUserSuggestions, setShowUserSuggestions] = useState(false);
   const [searchingUsers, setSearchingUsers] = useState(false);
@@ -279,7 +280,7 @@ export default function AnalyticsClient() {
   );
 
   const selectedUser = useMemo(() => {
-    if (!username.trim() || !data) return null;
+    if (!selectedUsername || !data) return null;
 
     const ovpn = data.accessBreakdown.find(
       (item) => item.access === "OVPN",
@@ -289,7 +290,7 @@ export default function AnalyticsClient() {
     );
 
     return {
-      username: username.trim(),
+      username: selectedUsername,
       sessions: data.summary.totalSessions,
       durationSeconds: data.summary.totalDurationSeconds,
       downloadBytes: data.summary.totalDownloadBytes,
@@ -299,7 +300,7 @@ export default function AnalyticsClient() {
       hotspotSessions: hotspot?.sessions ?? 0,
       hotspotDurationSeconds: hotspot?.durationSeconds ?? 0,
     };
-  }, [data, username]);
+  }, [data, selectedUsername]);
 
   return (
     <main className="min-h-full bg-[#070d18] p-6 text-white md:p-8">
@@ -337,6 +338,7 @@ export default function AnalyticsClient() {
                   onChange={(event) => {
                     const value = event.target.value;
                     setUsername(value);
+                    setSelectedUsername("");
                     setShowUserSuggestions(true);
 
                     const requestId = ++userSearchRequest.current;
@@ -405,6 +407,7 @@ export default function AnalyticsClient() {
                               }}
                               onClick={() => {
                                 setUsername(suggestion);
+                                setSelectedUsername(suggestion);
                                 setUserSuggestions([]);
                                 setShowUserSuggestions(false);
                                 void loadAnalytics(suggestion);
@@ -506,6 +509,7 @@ export default function AnalyticsClient() {
                 type="button"
                 onClick={() => {
                   setUsername("");
+                  setSelectedUsername("");
                   setUserSuggestions([]);
                   setShowUserSuggestions(false);
                   void loadAnalytics("");
