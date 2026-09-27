@@ -49,4 +49,35 @@ public class AnalyticsController : ControllerBase
             });
         }
     }
+
+    [HttpGet("users")]
+    public async Task<IActionResult> SearchUsers(
+        [FromQuery] string? query,
+        [FromQuery] int limit = 10,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result =
+                await _analyticsService.SearchUsersAsync(
+                    query,
+                    limit,
+                    cancellationToken);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Users loaded successfully",
+                data = result
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
+    }
 }
