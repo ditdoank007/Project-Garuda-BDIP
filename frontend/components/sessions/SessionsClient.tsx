@@ -589,8 +589,16 @@ export default function SessionsClient({
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredSessions.map((session) => (
-                  <TableRow key={session.id}>
+                filteredSessions.map((session, index) => (
+                  <TableRow
+                    key={[
+                      session.id,
+                      session.username,
+                      session.startTime,
+                      session.callingStationId,
+                      index,
+                    ].join("-")}
+                  >
                     <TableCell>
                       {session.active ? (
                         <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
