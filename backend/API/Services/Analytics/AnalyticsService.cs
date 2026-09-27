@@ -30,6 +30,21 @@ public sealed class AnalyticsService
                 "Analytics period must have an end after the start.");
         }
 
+        // Never project accounting data into the future.
+        // This is especially important for open sessions (acctstoptime IS NULL),
+        // because they otherwise appear to continue until the selected period end.
+        var effectiveTo =
+            to > DateTimeOffset.UtcNow
+                ? DateTimeOffset.UtcNow
+                : to;
+
+        if (effectiveTo <= from)
+        {
+            return new AnalyticsResponse();
+        }
+
+        to = effectiveTo;
+
         var normalizedAccess = NormalizeAccess(access);
         var normalizedUsername =
             string.IsNullOrWhiteSpace(username)
