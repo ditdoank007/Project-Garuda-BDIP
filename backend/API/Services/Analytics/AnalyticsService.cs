@@ -417,6 +417,84 @@ public sealed class AnalyticsService
         return result;
     }
 
+    public async Task<List<string>> SearchUsersAsync(
+        string? query,
+        int limit = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedQuery =
+            string.IsNullOrWhiteSpace(query)
+                ? null
+                : query.Trim();
+
+        if (normalizedQuery != null && normalizedQuery.Length < 2)
+        {
+            return [];
+        }
+
+        limit = Math.Clamp(limit, 1, 20);
+
+        await using var dataSource =
+            NpgsqlDataSource.Create(BuildConnectionString());
+
+        const string sql = """
+            SELECT username
+            FROM public.radacct
+            WHERE username IS NOT NULL
+              AND btrim(username) <> ''
+              AND (
+                    @query IS NULL
+                    OR username ILIKE @query
+                  )
+            GROUP BY username
+            ORDER BY
+                CASE
+                    WHEN @plain_query IS NOT NULL
+                         AND lower(username) = lower(@plain_query)
+                    THEN 0
+                    WHEN @plain_query IS NOT NULL
+                         AND lower(username) LIKE lower(@plain_query) || '%'
+                    THEN 1
+                    ELSE 2
+                END,
+                lower(username)
+            LIMIT @limit;
+            """;
+
+        await using var command = dataSource.CreateCommand(sql);
+
+        command.Parameters.AddWithValue(
+            "query",
+            NpgsqlDbType.Text,
+            normalizedQuery == null
+                ? DBNull.Value
+                : $"%{normalizedQuery}%");
+
+        command.Parameters.AddWithValue(
+            "plain_query",
+            NpgsqlDbType.Text,
+            normalizedQuery == null
+                ? DBNull.Value
+                : normalizedQuery);
+
+        command.Parameters.AddWithValue(
+            "limit",
+            NpgsqlDbType.Integer,
+            limit);
+
+        await using var reader =
+            await command.ExecuteReaderAsync(cancellationToken);
+
+        var result = new List<string>();
+
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            result.Add(reader.GetString(0));
+        }
+
+        return result;
+    }
+
     private async Task<List<AnalyticsUser>> GetUsersAsync(
         NpgsqlDataSource dataSource,
         DateTimeOffset from,
