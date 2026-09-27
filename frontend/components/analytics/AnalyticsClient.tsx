@@ -27,14 +27,13 @@ import {
   useState,
 } from "react";
 
-import {
-  getAnalytics,
-  searchAnalyticsUsers,
-} from "@/services/analytics.service";
+import { getAnalytics } from "@/services/analytics.service";
+import { getUsers } from "@/services/users.service";
 import type {
   AnalyticsData,
   AnalyticsUser,
 } from "@/types/analytics";
+import type { User } from "@/types/users";
 
 function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -189,7 +188,8 @@ export default function AnalyticsClient() {
   );
   const [username, setUsername] = useState("");
   const [selectedUsername, setSelectedUsername] = useState("");
-  const [userSuggestions, setUserSuggestions] = useState<string[]>([]);
+  const [userDirectory, setUserDirectory] = useState<User[]>([]);
+  const [userSuggestions, setUserSuggestions] = useState<User[]>([]);
   const [showUserSuggestions, setShowUserSuggestions] = useState(false);
   const [searchingUsers, setSearchingUsers] = useState(false);
   const userSearchRequest = useRef(0);
@@ -229,6 +229,28 @@ export default function AnalyticsClient() {
 
   useEffect(() => {
     void loadAnalytics();
+
+    let active = true;
+
+    async function loadUserDirectory() {
+      try {
+        const response = await getUsers();
+
+        if (active) {
+          setUserDirectory(response.data?.users ?? []);
+        }
+      } catch {
+        if (active) {
+          setUserDirectory([]);
+        }
+      }
+    }
+
+    void loadUserDirectory();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   function applyPreset(value: string) {
@@ -351,28 +373,43 @@ export default function AnalyticsClient() {
 
                     setSearchingUsers(true);
 
-                    window.setTimeout(async () => {
+                    window.setTimeout(() => {
                       if (requestId !== userSearchRequest.current) return;
 
-                      try {
-                        const response = await searchAnalyticsUsers(
-                          value.trim(),
-                          10,
-                        );
+                      const normalized = value.trim().toLowerCase();
 
-                        if (requestId === userSearchRequest.current) {
-                          setUserSuggestions(response.data);
-                        }
-                      } catch {
-                        if (requestId === userSearchRequest.current) {
-                          setUserSuggestions([]);
-                        }
-                      } finally {
-                        if (requestId === userSearchRequest.current) {
-                          setSearchingUsers(false);
-                        }
-                      }
-                    }, 250);
+                      const matches = userDirectory
+                        .filter((user) =>
+                          [user.fullName, user.username]
+                            .filter(Boolean)
+                            .some((field) =>
+                              field.toLowerCase().includes(normalized),
+                            ),
+                        )
+                        .sort((a, b) => {
+                          const aName = a.fullName.toLowerCase();
+                          const bName = b.fullName.toLowerCase();
+                          const aUser = a.username.toLowerCase();
+                          const bUser = b.username.toLowerCase();
+
+                          const aStarts =
+                            aName.startsWith(normalized) ||
+                            aUser.startsWith(normalized);
+                          const bStarts =
+                            bName.startsWith(normalized) ||
+                            bUser.startsWith(normalized);
+
+                          if (aStarts !== bStarts) {
+                            return aStarts ? -1 : 1;
+                          }
+
+                          return aName.localeCompare(bName);
+                        })
+                        .slice(0, 10);
+
+                      setUserSuggestions(matches);
+                      setSearchingUsers(false);
+                    }, 150);
                   }}
                   onFocus={() => {
                     if (username.trim().length >= 2) {
@@ -400,22 +437,25 @@ export default function AnalyticsClient() {
                         <div className="max-h-64 overflow-y-auto py-1">
                           {userSuggestions.map((suggestion) => (
                             <button
-                              key={suggestion}
+                              key={suggestion.username}
                               type="button"
                               onMouseDown={(event) => {
                                 event.preventDefault();
                               }}
                               onClick={() => {
-                                setUsername(suggestion);
-                                setSelectedUsername(suggestion);
+                                setUsername(suggestion.username);
+                                setSelectedUsername(suggestion.username);
                                 setUserSuggestions([]);
                                 setShowUserSuggestions(false);
-                                void loadAnalytics(suggestion);
+                                void loadAnalytics(suggestion.username);
                               }}
-                              className="flex w-full items-center px-4 py-2.5 text-left text-sm text-slate-200 transition hover:bg-blue-500/10 hover:text-white"
+                              className="flex w-full items-center justify-between gap-4 px-4 py-2.5 text-left transition hover:bg-blue-500/10 hover:text-white"
                             >
-                              <span className="truncate">
-                                {suggestion}
+                              <span className="min-w-0 truncate text-sm text-slate-100">
+                                {suggestion.fullName || suggestion.username}
+                              </span>
+                              <span className="shrink-0 text-xs text-slate-500">
+                                {suggestion.username}
                               </span>
                             </button>
                           ))}
@@ -542,9 +582,18 @@ export default function AnalyticsClient() {
                   User Analytics
                 </p>
                 <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-xl font-semibold text-white">
-                    {selectedUser.username}
-                  </h2>
+                  <div>
+                    <h2 className="text-xl font-semibold text-white">
+                      {userDirectory.find(
+                        (user) =>
+                          user.username.toLowerCase() ===
+                          selectedUser.username.toLowerCase(),
+                      )?.fullName || selectedUser.username}
+                    </h2>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {selectedUser.username}
+                    </p>
+                  </div>
                   <span className="rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-xs text-blue-200">
                     {selectedUser.sessions} sessions
                   </span>
