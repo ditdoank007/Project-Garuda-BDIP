@@ -12,7 +12,7 @@ type LoginResponse = {
   };
 };
 
-function Infunction InteractiveTitle() {
+function InteractiveTitle() {
   return (
     <div className="select-none">
       <span className="block text-white">
