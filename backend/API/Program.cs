@@ -55,6 +55,7 @@ using BDIP.Infrastructure.RouterOS;
 using BDIP.Infrastructure.Synology;
 using BDIP.Infrastructure.Monitoring;
 using BDIP.API.Services.Sessions;
+using BDIP.API.Services.Analytics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -195,6 +196,8 @@ builder.Services.AddScoped<
 
 builder.Services.AddScoped<
     UnifiedSessionService>();
+
+builder.Services.AddScoped<AnalyticsService>();
 
 builder.Services.Configure<LdapOptions>(
     builder.Configuration.GetSection("Ldap"));

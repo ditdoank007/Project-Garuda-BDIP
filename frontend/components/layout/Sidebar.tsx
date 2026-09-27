@@ -18,7 +18,7 @@ import {
   MapPinned,
   AppWindow,
   FileText,
-  Settings,
+  BarChart3,
   Network,
   Fingerprint,
   ClipboardCheck,
@@ -78,9 +78,9 @@ const administrationMenus = [
     icon: FileText,
   },
   {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings,
+    title: "Analytics",
+    href: "/analytics",
+    icon: BarChart3,
   },
 ];
 
