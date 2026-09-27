@@ -25,3 +25,24 @@ export function getAnalytics(
     `/analytics?${params.toString()}`,
   );
 }
+
+
+export interface AnalyticsUsersApiResponse {
+  success: boolean;
+  message: string;
+  data: string[];
+}
+
+export function searchAnalyticsUsers(
+  query: string,
+  limit = 10,
+): Promise<AnalyticsUsersApiResponse> {
+  const params = new URLSearchParams({
+    query,
+    limit: String(limit),
+  });
+
+  return apiGet<AnalyticsUsersApiResponse>(
+    `/analytics/users?${params.toString()}`,
+  );
+}
