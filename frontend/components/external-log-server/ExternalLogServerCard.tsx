@@ -151,7 +151,7 @@ export default function ExternalLogServerCard() {
                 onChange={(e) =>
                   setServerAddress(e.target.value)
                 }
-                placeholder="192.168.33.200"
+                placeholder="synology.sarsurabaya.id"
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               />
 

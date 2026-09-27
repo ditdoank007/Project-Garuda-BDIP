@@ -36,6 +36,16 @@ public sealed class GlobalAuthorizationMiddleware
             return;
         }
 
+        // HRIS integration menggunakan integration key sendiri.
+        // Tidak menggunakan session browser.
+        if (path.StartsWith(
+                "/api/integration/hris",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            await _next(context);
+            return;
+        }
+
         // Hanya API yang dikenakan global authorization.
         if (!path.StartsWith(
                 "/api/",

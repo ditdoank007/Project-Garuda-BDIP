@@ -366,9 +366,20 @@ public sealed class SynologySnmpService
         IList<Variable> variables,
         CancellationToken cancellationToken)
     {
+        var addresses =
+            await Dns.GetHostAddressesAsync(
+                host,
+                cancellationToken);
+
+        var address =
+            addresses.FirstOrDefault(
+                x => x.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            ?? throw new InvalidOperationException(
+                $"Unable to resolve Synology host: {host}");
+
         var endpoint =
             new IPEndPoint(
-                IPAddress.Parse(host),
+                address,
                 161);
 
         var authentication =
@@ -403,6 +414,12 @@ public sealed class SynologySnmpService
             await discovery.GetResponseAsync(
                 endpoint);
 
+        if (report == null)
+        {
+            throw new InvalidOperationException(
+                $"SNMPv3 discovery returned no response from {host} ({address}).");
+        }
+
         var request =
             new GetRequestMessage(
                 VersionCode.V3,
@@ -420,9 +437,21 @@ public sealed class SynologySnmpService
                 registry,
                 cancellationToken);
 
-        return response
-            .Pdu()
-            .Variables;
+        if (response == null)
+        {
+            throw new InvalidOperationException(
+                $"SNMPv3 GET returned no response from {host} ({address}).");
+        }
+
+        var pdu = response.Pdu();
+
+        if (pdu == null)
+        {
+            throw new InvalidOperationException(
+                $"SNMPv3 response from {host} ({address}) contains no PDU.");
+        }
+
+        return pdu.Variables;
     }
 
     private static string GetString(

@@ -4,7 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-export default function Logo() {
+export default function Logo({
+  title = "Basarnas BDIP",
+}: {
+  title?: string;
+}) {
   const [imageFailed, setImageFailed] = useState(false);
 
   return (
@@ -31,7 +35,13 @@ export default function Logo() {
 
       <div className="min-w-0 leading-tight">
         <div className="text-sm font-semibold tracking-wide">
-          Basarnas <span className="text-blue-400">BDIP</span>
+          {title === "Basarnas BDIP" ? (
+            <>
+              Basarnas <span className="text-blue-400">BDIP</span>
+            </>
+          ) : (
+            title
+          )}
         </div>
         <div className="text-xs text-slate-400">
           Digital Identity Platform
