@@ -33,5 +33,11 @@ export interface UserListResponse {
   data: {
     users: User[];
     total: number;
+    summary: {
+      totalUsers: number;
+      totalEmails: number;
+      changedPasswords: number;
+      defaultPasswords: number;
+    };
   };
 }
