@@ -153,17 +153,15 @@ export default function UserTable({
         <Table containerClassName="overflow-visible">
           <TableHeader>
             <TableRow>
+              <TableHead className="sticky top-0 z-20 bg-white">Nama Lengkap</TableHead>
               <TableHead className="sticky top-0 z-20 bg-white">Username</TableHead>
               <TableHead className="sticky top-0 z-20 bg-white">NIP</TableHead>
               <TableHead className="sticky top-0 z-20 bg-white">FingerID</TableHead>
-              <TableHead className="sticky top-0 z-20 bg-white">Full Name</TableHead>
               <TableHead className="sticky top-0 z-20 bg-white">Email</TableHead>
               <TableHead className="sticky top-0 z-20 bg-white">Unit</TableHead>
-              <TableHead className="sticky top-0 z-20 bg-white">NAP Policy</TableHead>
+              <TableHead className="sticky top-0 z-20 w-20 bg-white text-center">Action</TableHead>
               <TableHead className="sticky top-0 z-20 bg-white">Status</TableHead>
-              <TableHead className="sticky top-0 z-20 w-20 bg-white text-right">
-                Actions
-              </TableHead>
+              <TableHead className="sticky top-0 z-20 bg-white">NAP Policy</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -193,45 +191,31 @@ export default function UserTable({
 
                 return (
                   <TableRow key={user.uid}>
-                    <TableCell className="font-medium text-white bdip-data-complete">
-                      {user.username}
-                    </TableCell>
-
-                    <TableCell className={`text-white ${dataClass(user.nip)}`}>
-                      {user.nip || "-"}
-                    </TableCell>
-
-                    <TableCell className={`text-white ${dataClass(user.fingerId)}`}>
-                      {user.fingerId || "-"}
-                    </TableCell>
-
-                    <TableCell className={`text-white ${dataClass(user.fullName)}`}>
+                    <TableCell className={`font-medium ${dataClass(user.fullName)}`}>
                       {user.fullName || "-"}
                     </TableCell>
 
-                    <TableCell className={`text-white ${dataClass(user.email)}`}>
+                    <TableCell className="font-medium">
+                      {user.username}
+                    </TableCell>
+
+                    <TableCell className={dataClass(user.nip)}>
+                      {user.nip || "-"}
+                    </TableCell>
+
+                    <TableCell className={dataClass(user.fingerId)}>
+                      {user.fingerId || "-"}
+                    </TableCell>
+
+                    <TableCell className={dataClass(user.email)}>
                       {user.email || "-"}
                     </TableCell>
 
-                    <TableCell className={`text-white ${dataClass(user.unit)}`}>
+                    <TableCell className={dataClass(user.unit)}>
                       {user.unit || "-"}
                     </TableCell>
 
-                    <TableCell
-                      className={`min-w-[260px] text-white ${policyClass}`}
-                    >
-                      <UserPolicySelector
-                        user={user}
-                        policies={policies}
-                        initialPolicyId={user.policyId}
-                      />
-                    </TableCell>
-
-                    <TableCell>
-                      <StatusBadge active={user.enabled} />
-                    </TableCell>
-
-                    <TableCell className="text-right">
+                    <TableCell className="text-center">
                       <ActionMenu
                         onView={() => handleView(user)}
                         onEdit={() => onEdit(user)}
