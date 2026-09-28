@@ -92,8 +92,8 @@ public sealed class PostgreSqlUserService : IUserService
             if (await summaryReader.ReadAsync())
             {
                 var totalUsers = result.Users.Count;
-                var totalEmails = summaryReader.GetInt32(0);
-                var changedPasswords = summaryReader.GetInt32(1);
+                var totalEmails = checked((int)summaryReader.GetInt64(0));
+                var changedPasswords = checked((int)summaryReader.GetInt64(1));
 
                 result.Summary = new UserListSummary
                 {
