@@ -185,10 +185,6 @@ export default function UserTable({
                     ? "bdip-data-complete"
                     : "bdip-data-incomplete";
 
-                const policyClass = user.policyId
-                  ? "bdip-data-complete"
-                  : "bdip-data-incomplete";
-
                 return (
                   <TableRow key={user.uid}>
                     <TableCell className={`font-medium ${dataClass(user.fullName)}`}>
