@@ -116,9 +116,19 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isAdministrator, setIsAdministrator] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [todayLabel, setTodayLabel] = useState("");
 
   useEffect(() => {
     let mounted = true;
+
+    setTodayLabel(
+      new Intl.DateTimeFormat("en-GB", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        timeZone: "Asia/Jakarta",
+      }).format(new Date()),
+    );
 
     getCurrentUser().then((user) => {
       if (mounted) {
@@ -157,13 +167,7 @@ export default function Sidebar() {
             <div className="mt-4 flex items-center gap-2 border-t border-white/10 pt-4 text-xs text-slate-400">
               <CalendarDays size={15} />
               <span>
-                Today (
-                {new Intl.DateTimeFormat("en-GB", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                }).format(new Date())}
-                )
+                Today {todayLabel ? `(${todayLabel})` : ""}
               </span>
             </div>
           </>
