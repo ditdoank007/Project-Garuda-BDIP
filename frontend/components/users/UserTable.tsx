@@ -247,6 +247,18 @@ export default function UserTable({
                         }
                       />
                     </TableCell>
+
+                    <TableCell>
+                      <StatusBadge active={user.enabled} />
+                    </TableCell>
+
+                    <TableCell className="min-w-[260px]">
+                      <UserPolicySelector
+                        user={user}
+                        policies={policies}
+                        initialPolicyId={user.policyId}
+                      />
+                    </TableCell>
                   </TableRow>
                 );
               })
