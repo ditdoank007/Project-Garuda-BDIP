@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -31,8 +31,14 @@ export default function ActionMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <MoreHorizontal className="h-5 w-5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+          title="Edit / Actions"
+          aria-label="Edit / Actions"
+        >
+          <Pencil className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
 
