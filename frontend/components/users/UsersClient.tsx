@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import {
+  KeyRound,
+  LockKeyhole,
+  Mail,
+  Users as UsersIcon,
+} from "lucide-react";
 
 import useSmartSearch from "@/hooks/useSmartSearch";
 import useDebounce from "@/hooks/useDebounce";
@@ -11,6 +17,7 @@ import UserTable from "./UserTable";
 import UserDialog from "./UserDialog";
 import { getCurrentUser } from "@/services/auth.service";
 import ImportUsersDialog from "./ImportUsersDialog";
+import { Card } from "@/components/ui/card";
 
 import {
   createUser,
@@ -30,8 +37,16 @@ import type {
   UserFormData,
 } from "@/types/users";
 
+interface UserSummary {
+  totalUsers: number;
+  totalEmails: number;
+  changedPasswords: number;
+  defaultPasswords: number;
+}
+
 interface UsersClientProps {
   users: User[];
+  summary: UserSummary;
 }
 
 type DialogMode = "create" | "edit";
@@ -91,6 +106,7 @@ function userToFormData(user: User): UserFormData {
 
 export default function UsersClient({
   users,
+  summary,
 }: UsersClientProps) {
   const [keyword, setKeyword] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -204,7 +220,7 @@ export default function UsersClient({
   const filteredUsers = useSmartSearch(
     userRows,
     debouncedKeyword,
-    ["username", "fullName", "email", "unit"],
+    ["username", "nip", "fingerId", "fullName", "email", "unit"],
   );
 
   async function handleCreateUser() {
@@ -410,10 +426,74 @@ export default function UsersClient({
     void handleCreateUser();
   }
 
-  return (
-    <div className="flex h-full min-h-0 flex-col">
+  const summaryCards = [
+    {
+      title: "Total Username",
+      value: summary.totalUsers,
+      description: "Seluruh akun pengguna",
+      icon: UsersIcon,
+    },
+    {
+      title: "Total Email",
+      value: summary.totalEmails,
+      description: "Username yang sudah memiliki email",
+      icon: Mail,
+    },
+    {
+      title: "Total Changed Password",
+      value: summary.changedPasswords,
+      description: "Password yang sudah pernah diubah",
+      icon: KeyRound,
+    },
+    {
+      title: "Total Default Password",
+      value: summary.defaultPasswords,
+      description: "Masih menggunakan password awal",
+      icon: LockKeyhole,
+    },
+  ];
 
-      <div className="sticky top-0 z-20 shrink-0 bg-slate-100 pb-4">
+  return (
+    <div className="flex h-full min-h-0 flex-col space-y-6 rounded-2xl bg-white p-6 shadow-sm">
+
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          Users
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Manage LDAP accounts, identity data, NAP policy, and account status.
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {summaryCards.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <Card key={item.title} className="border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">
+                    {item.title}
+                  </p>
+                  <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">
+                    {item.value}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {item.description}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-slate-100 p-3 text-slate-700">
+                  <Icon className="h-5 w-5" />
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      <div className="sticky top-0 z-20 shrink-0 rounded-xl border border-slate-200 bg-white p-4">
         <UserToolbar
           keyword={keyword}
           onKeywordChange={setKeyword}
@@ -428,7 +508,7 @@ export default function UsersClient({
         />
       </div>
 
-      <div className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white">
         <UserTable
           users={filteredUsers}
           policies={policies}
