@@ -73,6 +73,40 @@ public sealed class PostgreSqlUserService : IUserService
             result.Users.Add(Map(reader));
         }
 
+        await using (var summaryCommand = dataSource.CreateCommand(
+            """
+            SELECT
+                COUNT(*) FILTER (
+                    WHERE email IS NOT NULL
+                      AND BTRIM(email) <> ''
+                ),
+                COUNT(*) FILTER (
+                    WHERE password_changed_at IS NOT NULL
+                )
+            FROM public.users;
+            """))
+        {
+            await using var summaryReader =
+                await summaryCommand.ExecuteReaderAsync();
+
+            if (await summaryReader.ReadAsync())
+            {
+                var totalUsers = result.Users.Count;
+                var totalEmails = summaryReader.GetInt32(0);
+                var changedPasswords = summaryReader.GetInt32(1);
+
+                result.Summary = new UserListSummary
+                {
+                    TotalUsers = totalUsers,
+                    TotalEmails = totalEmails,
+                    ChangedPasswords = changedPasswords,
+                    DefaultPasswords = Math.Max(
+                        0,
+                        totalUsers - changedPasswords)
+                };
+            }
+        }
+
         return result;
     }
 
@@ -211,49 +245,177 @@ public sealed class PostgreSqlUserService : IUserService
             }
         }
 
-        await using var dataSource = CreateDataSource();
+        var renamed = !string.Equals(
+            username,
+            newUsername,
+            StringComparison.OrdinalIgnoreCase);
 
-        var unitId = await FindUnitIdAsync(dataSource, request.Unit);
-
-        await using var command = dataSource.CreateCommand(
-            """
-            UPDATE public.users
-            SET
-                username  = @newusername,
-                nip       = @nip,
-                finger_id = @fingerid,
-                full_name = @fullname,
-                email     = @email,
-                unit_id   = @unitid,
-                enabled   = @enabled
-            WHERE LOWER(username)=LOWER(@username);
-            """);
-
-        command.Parameters.AddWithValue("newusername", newUsername);
-        command.Parameters.AddWithValue(
-            "nip",
-            string.IsNullOrWhiteSpace(request.Nip) ? DBNull.Value : request.Nip);
-        command.Parameters.AddWithValue(
-            "fingerid",
-            string.IsNullOrWhiteSpace(request.FingerId) ? DBNull.Value : request.FingerId);
-        command.Parameters.AddWithValue("fullname", request.FullName);
-        command.Parameters.AddWithValue(
-            "email",
-            string.IsNullOrWhiteSpace(request.Email) ? DBNull.Value : request.Email);
-        command.Parameters.AddWithValue(
-            "unitid",
-            unitId is null ? DBNull.Value : unitId);
-        command.Parameters.AddWithValue("enabled", request.Enabled);
-        command.Parameters.AddWithValue("username", username);
-
-        var affected = await command.ExecuteNonQueryAsync();
-
-        if (affected == 0)
+        if (renamed)
         {
-            throw new InvalidOperationException(
-                $"User '{username}' not found.");
+            await _ldapProvisioning.RenameUserAsync(
+                username,
+                newUsername);
+
+            try
+            {
+                await _radiusProvisioning.RenameUserAsync(
+                    username,
+                    newUsername);
+            }
+            catch
+            {
+                await _ldapProvisioning.RenameUserAsync(
+                    newUsername,
+                    username);
+                throw;
+            }
         }
 
+        try
+        {
+            await using var dataSource = CreateDataSource();
+            await using var transaction =
+                await dataSource.OpenConnectionAsync();
+
+            await using var dbTransaction =
+                await transaction.BeginTransactionAsync();
+
+            try
+            {
+                var unitId = await FindUnitIdAsync(
+                    dataSource,
+                    request.Unit);
+
+                await using var command =
+                    transaction.CreateCommand();
+
+                command.Transaction = dbTransaction;
+                command.CommandText =
+                    """
+                    UPDATE public.users
+                    SET
+                        username  = @newusername,
+                        nip       = @nip,
+                        finger_id = @fingerid,
+                        full_name = @fullname,
+                        email     = @email,
+                        unit_id   = @unitid,
+                        enabled   = @enabled,
+                        updated_at = NOW()
+                    WHERE LOWER(username)=LOWER(@username);
+                    """;
+
+                command.Parameters.AddWithValue(
+                    "newusername",
+                    newUsername);
+
+                command.Parameters.AddWithValue(
+                    "nip",
+                    string.IsNullOrWhiteSpace(request.Nip)
+                        ? DBNull.Value
+                        : request.Nip);
+
+                command.Parameters.AddWithValue(
+                    "fingerid",
+                    string.IsNullOrWhiteSpace(request.FingerId)
+                        ? DBNull.Value
+                        : request.FingerId);
+
+                command.Parameters.AddWithValue(
+                    "fullname",
+                    request.FullName);
+
+                command.Parameters.AddWithValue(
+                    "email",
+                    string.IsNullOrWhiteSpace(request.Email)
+                        ? DBNull.Value
+                        : request.Email);
+
+                command.Parameters.AddWithValue(
+                    "unitid",
+                    unitId is null
+                        ? DBNull.Value
+                        : unitId);
+
+                command.Parameters.AddWithValue(
+                    "enabled",
+                    request.Enabled);
+
+                command.Parameters.AddWithValue(
+                    "username",
+                    username);
+
+                var affected =
+                    await command.ExecuteNonQueryAsync();
+
+                if (affected == 0)
+                {
+                    throw new InvalidOperationException(
+                        $"User '{username}' not found.");
+                }
+
+                await using var napCommand =
+                    transaction.CreateCommand();
+
+                napCommand.Transaction = dbTransaction;
+                napCommand.CommandText =
+                    """
+                    UPDATE public.user_nap
+                    SET
+                        uid = @newusername,
+                        updated_at = NOW()
+                    WHERE LOWER(uid)=LOWER(@username);
+                    """;
+
+                napCommand.Parameters.AddWithValue(
+                    "newusername",
+                    newUsername);
+
+                napCommand.Parameters.AddWithValue(
+                    "username",
+                    username);
+
+                await napCommand.ExecuteNonQueryAsync();
+
+                await dbTransaction.CommitAsync();
+            }
+            catch
+            {
+                await dbTransaction.RollbackAsync();
+                throw;
+            }
+        }
+        catch
+        {
+            if (renamed)
+            {
+                try
+                {
+                    await _radiusProvisioning.RenameUserAsync(
+                        newUsername,
+                        username);
+                }
+                catch
+                {
+                    // Preserve the original exception; reconciliation can
+                    // repair an external provisioning mismatch if required.
+                }
+
+                try
+                {
+                    await _ldapProvisioning.RenameUserAsync(
+                        newUsername,
+                        username);
+                }
+                catch
+                {
+                    // Preserve the original exception; reconciliation can
+                    // repair an external provisioning mismatch if required.
+                }
+            }
+
+            throw;
+        }
     }
 
     public async Task ResetPasswordAsync(
@@ -276,6 +438,21 @@ public sealed class PostgreSqlUserService : IUserService
         // The plaintext password is never stored in BDIP or FreeRADIUS.
         await _ldapProvisioning.ResetPasswordAsync(username, request);
         await _radiusProvisioning.ResetPasswordAsync(username);
+
+        await using var dataSource = CreateDataSource();
+
+        await using var command = dataSource.CreateCommand(
+            """
+            UPDATE public.users
+            SET
+                password_changed_at = NOW(),
+                updated_at = NOW()
+            WHERE LOWER(username)=LOWER(@username);
+            """);
+
+        command.Parameters.AddWithValue("username", username);
+
+        await command.ExecuteNonQueryAsync();
     }
 
     public async Task UpdateUserStatusAsync(
