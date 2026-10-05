@@ -12,7 +12,8 @@ public interface ILdapProvisioningService
 
     Task RenameUserAsync(
         string username,
-        string newUsername);
+        string newUsername,
+        string? email = null);
 
     Task DeleteUserAsync(
         string username);
@@ -23,5 +24,6 @@ public interface ILdapProvisioningService
 
     Task ResetPasswordAsync(
         string username,
-        ResetUserPasswordRequest request);
+        ResetUserPasswordRequest request,
+        string? email = null);
 }
