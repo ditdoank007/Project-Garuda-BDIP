@@ -313,7 +313,8 @@ public class UserService : ILdapProvisioningService
 
     public async Task RenameUserAsync(
         string username,
-        string newUsername)
+        string newUsername,
+        string? email = null)
     {
         await Task.CompletedTask;
 
@@ -333,11 +334,19 @@ public class UserService : ILdapProvisioningService
 
         using var connection = _ldap.Create();
 
+        var uidFilter = $"(uid={EscapeFilterValue(username.Trim())})";
+        var mailFilter = string.IsNullOrWhiteSpace(email)
+            ? null
+            : $"(mail={EscapeFilterValue(email.Trim())})";
+        var filter = mailFilter is null
+            ? uidFilter
+            : $"(|{uidFilter}{mailFilter})";
+
         var searchRequest = new SearchRequest(
             _options.PeopleDn,
-            $"(uid={EscapeFilterValue(username.Trim())})",
+            filter,
             SearchScope.Subtree,
-            new[] { "uid" });
+            new[] { "uid", "mail" });
 
         var searchResponse =
             (SearchResponse)connection.SendRequest(searchRequest);
@@ -345,7 +354,13 @@ public class UserService : ILdapProvisioningService
         if (searchResponse.Entries.Count == 0)
         {
             throw new InvalidOperationException(
-                $"LDAP user '{username}' does not exist.");
+                $"LDAP user '{username}' does not exist by uid or email.");
+        }
+
+        if (searchResponse.Entries.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"LDAP identity for '{username}' is ambiguous.");
         }
 
         var oldDn =
@@ -383,7 +398,8 @@ public class UserService : ILdapProvisioningService
 
     public async Task ResetPasswordAsync(
         string username,
-        ResetUserPasswordRequest request)
+        ResetUserPasswordRequest request,
+        string? email = null)
     {
         await Task.CompletedTask;
 
@@ -403,8 +419,36 @@ public class UserService : ILdapProvisioningService
 
         using var connection = _ldap.Create();
 
-        string dn =
-            $"uid={EscapeDnValue(username)},{_options.PeopleDn}";
+        var uidFilter = $"(uid={EscapeFilterValue(username.Trim())})";
+        var mailFilter = string.IsNullOrWhiteSpace(email)
+            ? null
+            : $"(mail={EscapeFilterValue(email.Trim())})";
+        var filter = mailFilter is null
+            ? uidFilter
+            : $"(|{uidFilter}{mailFilter})";
+
+        var searchRequest = new SearchRequest(
+            _options.PeopleDn,
+            filter,
+            SearchScope.Subtree,
+            new[] { "uid", "mail" });
+
+        var searchResponse =
+            (SearchResponse)connection.SendRequest(searchRequest);
+
+        if (searchResponse.Entries.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"LDAP user '{username}' does not exist by uid or email.");
+        }
+
+        if (searchResponse.Entries.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"LDAP identity for '{username}' is ambiguous.");
+        }
+
+        string dn = searchResponse.Entries[0].DistinguishedName;
 
         string passwordHash =
             LdapPasswordHasher.Hash(request.NewPassword);
