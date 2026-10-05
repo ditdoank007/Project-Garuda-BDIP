@@ -510,9 +510,29 @@ public class UserService : ILdapProvisioningService
 
         using var connection = _ldap.Create();
 
-        string dn =
-            $"uid={EscapeDnValue(username)},{_options.PeopleDn}";
+        var searchRequest = new SearchRequest(
+            _options.PeopleDn,
+            $"(uid={EscapeFilterValue(username.Trim())})",
+            SearchScope.Subtree,
+            new[] { "uid" });
 
+        var searchResponse =
+            (SearchResponse)connection.SendRequest(searchRequest);
+
+        // Deletion is intentionally idempotent. LDAP may already be
+        // missing the account while BDIP/RADIUS still has stale state.
+        if (searchResponse.Entries.Count == 0)
+        {
+            return;
+        }
+
+        if (searchResponse.Entries.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"LDAP identity for '{username}' is ambiguous.");
+        }
+
+        var dn = searchResponse.Entries[0].DistinguishedName;
         var deleteRequest = new DeleteRequest(dn);
 
         connection.SendRequest(deleteRequest);
