@@ -542,12 +542,8 @@ public sealed class PostgreSqlUserService : IUserService
 
         var rows = await command.ExecuteNonQueryAsync();
 
-        if (rows == 0)
-        {
-            throw new InvalidOperationException(
-                $"User '{username}' not found.");
-        }
-
+        // Cleanup must remain idempotent. A user can exist in LDAP/RADIUS
+        // even when the BDIP record has already been removed.
         await _ldapProvisioning.DeleteUserAsync(username);
         await _radiusProvisioning.RemoveUserGroupAsync(username);
         await _radiusProvisioning.DeleteUserAsync(username);
