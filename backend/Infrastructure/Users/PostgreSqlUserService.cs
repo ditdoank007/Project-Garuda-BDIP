@@ -254,7 +254,8 @@ public sealed class PostgreSqlUserService : IUserService
         {
             await _ldapProvisioning.RenameUserAsync(
                 username,
-                newUsername);
+                newUsername,
+                existingEmail);
 
             try
             {
@@ -266,7 +267,8 @@ public sealed class PostgreSqlUserService : IUserService
             {
                 await _ldapProvisioning.RenameUserAsync(
                     newUsername,
-                    username);
+                    username,
+                    existingEmail);
                 throw;
             }
         }
@@ -405,7 +407,8 @@ public sealed class PostgreSqlUserService : IUserService
                 {
                     await _ldapProvisioning.RenameUserAsync(
                         newUsername,
-                        username);
+                        username,
+                        existingEmail);
                 }
                 catch
                 {
@@ -436,7 +439,24 @@ public sealed class PostgreSqlUserService : IUserService
 
         // Password reset originates in BDIP and is immediately propagated.
         // The plaintext password is never stored in BDIP or FreeRADIUS.
-        await _ldapProvisioning.ResetPasswordAsync(username, request);
+        string? email = null;
+        await using (var identityDataSource = CreateDataSource())
+        await using (var identityCommand = identityDataSource.CreateCommand(
+            """
+            SELECT email
+            FROM public.users
+            WHERE LOWER(username)=LOWER(@username)
+            LIMIT 1;
+            """))
+        {
+            identityCommand.Parameters.AddWithValue("username", username);
+            var emailValue = await identityCommand.ExecuteScalarAsync();
+            email = emailValue == null || emailValue == DBNull.Value
+                ? null
+                : Convert.ToString(emailValue);
+        }
+
+        await _ldapProvisioning.ResetPasswordAsync(username, request, email);
         await _radiusProvisioning.ResetPasswordAsync(username);
 
         await using var dataSource = CreateDataSource();
