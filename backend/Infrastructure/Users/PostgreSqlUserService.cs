@@ -250,6 +250,28 @@ public sealed class PostgreSqlUserService : IUserService
             newUsername,
             StringComparison.OrdinalIgnoreCase);
 
+        string? existingEmail = null;
+
+        if (renamed)
+        {
+            await using var identityDataSource = CreateDataSource();
+            await using var identityCommand = identityDataSource.CreateCommand(
+                """
+                SELECT email
+                FROM public.users
+                WHERE LOWER(username)=LOWER(@username)
+                LIMIT 1;
+                """);
+
+            identityCommand.Parameters.AddWithValue("username", username);
+
+            var emailValue = await identityCommand.ExecuteScalarAsync();
+
+            existingEmail = emailValue == null || emailValue == DBNull.Value
+                ? null
+                : Convert.ToString(emailValue);
+        }
+
         if (renamed)
         {
             await _ldapProvisioning.RenameUserAsync(
