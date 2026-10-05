@@ -333,15 +333,46 @@ public class UserService : ILdapProvisioningService
 
         using var connection = _ldap.Create();
 
-        string oldDn =
-            $"uid={EscapeDnValue(username)},{_options.PeopleDn}";
+        var searchRequest = new SearchRequest(
+            _options.PeopleDn,
+            $"(uid={EscapeFilterValue(username.Trim())})",
+            SearchScope.Subtree,
+            new[] { "uid" });
+
+        var searchResponse =
+            (SearchResponse)connection.SendRequest(searchRequest);
+
+        if (searchResponse.Entries.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"LDAP user '{username}' does not exist.");
+        }
+
+        var oldDn =
+            searchResponse.Entries[0].DistinguishedName;
+
+        var newUsernameSearchRequest = new SearchRequest(
+            _options.PeopleDn,
+            $"(uid={EscapeFilterValue(newUsername.Trim())})",
+            SearchScope.Subtree,
+            new[] { "uid" });
+
+        var newUsernameSearchResponse =
+            (SearchResponse)connection.SendRequest(
+                newUsernameSearchRequest);
+
+        if (newUsernameSearchResponse.Entries.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"LDAP username '{newUsername}' already exists.");
+        }
 
         string newRdn =
-            $"uid={EscapeDnValue(newUsername)}";
+            $"uid={EscapeDnValue(newUsername.Trim())}";
 
         var request = new ModifyDNRequest(
             oldDn,
-            _options.PeopleDn,
+            null,
             newRdn)
         {
             DeleteOldRdn = true
