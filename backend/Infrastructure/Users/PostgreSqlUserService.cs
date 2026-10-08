@@ -459,26 +459,44 @@ public sealed class PostgreSqlUserService : IUserService
             throw new InvalidOperationException("New password is required.");
         }
 
-        // Password reset originates in BDIP and is immediately propagated.
-        // The plaintext password is never stored in BDIP or FreeRADIUS.
-        string? email = null;
-        await using (var identityDataSource = CreateDataSource())
-        await using (var identityCommand = identityDataSource.CreateCommand(
-            """
-            SELECT email
-            FROM public.users
-            WHERE LOWER(username)=LOWER(@username)
-            LIMIT 1;
-            """))
+        // BDIP is the source of truth. Always resolve the canonical identity
+        // from PostgreSQL before changing downstream credentials.
+        var user = await GetUserByUsernameAsync(username);
+
+        if (user is null)
         {
-            identityCommand.Parameters.AddWithValue("username", username);
-            var emailValue = await identityCommand.ExecuteScalarAsync();
-            email = emailValue == null || emailValue == DBNull.Value
-                ? null
-                : Convert.ToString(emailValue);
+            throw new InvalidOperationException(
+                $"User '{username}' not found in BDIP.");
         }
 
-        await _ldapProvisioning.ResetPasswordAsync(username, request, email);
+        if (!user.Enabled)
+        {
+            throw new InvalidOperationException(
+                $"User '{username}' is disabled in BDIP.");
+        }
+
+        var provisioning = new CreateUserRequest
+        {
+            Username = user.Username,
+            Nip = user.Nip,
+            FingerId = user.FingerId,
+            FullName = user.FullName,
+            Email = user.Email,
+            Unit = user.Unit,
+            Password = request.NewPassword,
+            Enabled = user.Enabled
+        };
+
+        // LDAP is downstream. If the identity is missing, recreate it from
+        // the BDIP record using the password supplied by the administrator.
+        await _ldapProvisioning.ResetPasswordAsync(
+            username,
+            request,
+            user.Email,
+            provisioning);
+
+        // FreeRADIUS does not own the password. Keep its downstream state
+        // aligned with the BDIP -> LDAP authentication model.
         await _radiusProvisioning.ResetPasswordAsync(username);
 
         await using var dataSource = CreateDataSource();
