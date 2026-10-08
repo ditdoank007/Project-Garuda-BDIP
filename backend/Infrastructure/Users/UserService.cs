@@ -399,7 +399,8 @@ public class UserService : ILdapProvisioningService
     public async Task ResetPasswordAsync(
         string username,
         ResetUserPasswordRequest request,
-        string? email = null)
+        string? email = null,
+        CreateUserRequest? provisioning = null)
     {
         await Task.CompletedTask;
 
@@ -419,17 +420,13 @@ public class UserService : ILdapProvisioningService
 
         using var connection = _ldap.Create();
 
+        // The username in BDIP is authoritative. Email is deliberately not
+        // used as a fallback here because it could identify another account.
         var uidFilter = $"(uid={EscapeFilterValue(username.Trim())})";
-        var mailFilter = string.IsNullOrWhiteSpace(email)
-            ? null
-            : $"(mail={EscapeFilterValue(email.Trim())})";
-        var filter = mailFilter is null
-            ? uidFilter
-            : $"(|{uidFilter}{mailFilter})";
 
         var searchRequest = new SearchRequest(
             _options.PeopleDn,
-            filter,
+            uidFilter,
             SearchScope.Subtree,
             new[] { "uid", "mail" });
 
@@ -438,8 +435,17 @@ public class UserService : ILdapProvisioningService
 
         if (searchResponse.Entries.Count == 0)
         {
-            throw new InvalidOperationException(
-                $"LDAP user '{username}' does not exist by uid or email.");
+            if (provisioning is null)
+            {
+                throw new InvalidOperationException(
+                    $"LDAP user '{username}' does not exist and BDIP provisioning data was not supplied.");
+            }
+
+            // BDIP is the source of truth. Recreate the missing downstream
+            // identity from the canonical BDIP record, including the new
+            // password supplied by the administrator.
+            await CreateUserAsync(provisioning);
+            return;
         }
 
         if (searchResponse.Entries.Count > 1)
