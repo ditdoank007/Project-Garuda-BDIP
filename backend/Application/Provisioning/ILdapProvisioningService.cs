@@ -25,5 +25,6 @@ public interface ILdapProvisioningService
     Task ResetPasswordAsync(
         string username,
         ResetUserPasswordRequest request,
-        string? email = null);
+        string? email = null,
+        CreateUserRequest? provisioning = null);
 }
